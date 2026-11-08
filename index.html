@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Полярка">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#14181d">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>Полярка G12.1</title>
+<style>
+:root{--bg:#f3f4f6;--card:#fff;--ink:#14181d;--mut:#5d6672;--line:#d8dce2;--acc:#0b6bcb;--acc2:#e8f1fc;--warn:#9a5b00;--warnbg:#fff4e0;--err:#b3261e;--rough:#c77700;--fin:#0b8a4a;--stock:#9aa3ae}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1114;--card:#171b20;--ink:#e8ebef;--mut:#98a2ae;--line:#2a3038;--acc:#5aa8ff;--acc2:#16283d;--warn:#f0b35a;--warnbg:#2a2113;--err:#ff8a80;--rough:#f0a53a;--fin:#4cd08a;--stock:#6b7580}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+body{padding:max(12px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom))}
+main{max-width:640px;margin:0 auto}
+h1{font-size:20px;margin:6px 0 12px}
+.seg{display:flex;gap:6px;margin-bottom:12px}
+.seg button{flex:1;padding:10px 6px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;font:inherit;font-weight:600}
+.seg button[aria-pressed=true]{background:var(--acc);color:#fff;border-color:var(--acc)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
+.card h2{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);margin:0 0 8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:13px;color:var(--mut)}
+input,select,textarea{width:100%;margin-top:3px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit;font-size:16px}
+textarea{font-family:ui-monospace,Menlo,monospace;font-size:13px;min-height:60px}
+.hide{display:none!important}
+.row{display:flex;gap:8px;margin-top:8px}
+.btn{flex:1;padding:12px;border-radius:10px;border:1px solid var(--acc);background:var(--acc);color:#fff;font:inherit;font-weight:600}
+.btn.sec{background:var(--card);color:var(--acc)}
+.err{color:var(--err);font-weight:600;margin:6px 0}
+.note{background:var(--warnbg);color:var(--warn);border-radius:10px;padding:10px;font-size:13px;margin-bottom:12px}
+pre{margin:0;white-space:pre;overflow:auto;font:13px/1.45 ui-monospace,Menlo,monospace;max-height:420px;-webkit-user-select:text;user-select:text}
+svg{width:100%;height:auto;display:block;background:var(--bg);border-radius:10px;border:1px solid var(--line)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin-top:6px}
+.legend i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}
+.sum{font-size:14px}.sum b{font-variant-numeric:tabular-nums}
+details summary{cursor:pointer;font-weight:600;padding:4px 0}
+</style>
+</head>
+<body>
+<main>
+<h1>Полярка G12.1 · Fanuc</h1>
+<div class="seg" id="mode">
+  <button data-m="flat1" aria-pressed="true">1 лыска</button>
+  <button data-m="flat2" aria-pressed="false">2 лыски</button>
+  <button data-m="poly" aria-pressed="false">Многогранник</button>
+</div>
+
+<div class="note">Проверь первую программу в симуляторе и покадрово, подача 0 %. Знак оси C, X по диаметру/радиусу и допустимость отрицательного X в полярке задаются настройками станка.</div>
+
+<div class="card"><h2>Заготовка и фреза</h2>
+<div class="grid">
+  <label>Диаметр заготовки, мм<input id="D" inputmode="decimal"></label>
+  <label>Диаметр фрезы, мм<input id="toolD" inputmode="decimal"></label>
+  <label>Z торца заготовки<input id="zFace" inputmode="decimal"></label>
+  <label>Длина по Z, мм<input id="L" inputmode="decimal"></label>
+  <label>Отвод над торцом по Z, мм<input id="zClear" inputmode="decimal"></label>
+  <label>Шаг по Z (ap), 0 = за один раз<input id="ap" inputmode="decimal"></label>
+</div></div>
+
+<div class="card"><h2 id="shapeTitle">Лыска</h2>
+<div class="grid">
+  <label id="flatModeWrap">Как задан размер
+    <select id="flatMode">
+      <option value="h">Расстояние от оси до лыски</option>
+      <option value="t">Глубина лыски от поверхности</option>
+      <option value="T">Остаток от противоположной стороны</option>
+    </select></label>
+  <label id="polySizeWrap" class="hide">Как задан размер
+    <select id="sizeMode"><option value="flats">Под ключ (между гранями)</option><option value="corners">По углам</option></select></label>
+  <label><span id="sizeLabel">Размер, мм</span><input id="size" inputmode="decimal"></label>
+  <label id="NWrap" class="hide">Число граней N<input id="N" inputmode="numeric"></label>
+  <label>Ориентация нормали, град (в плоскости C)<input id="phi" inputmode="decimal"></label>
+</div></div>
+
+<div class="card"><h2>Режимы и коррекция</h2>
+<div class="grid">
+  <label>Подача по контуру F, мм/мин<input id="F" inputmode="decimal"></label>
+  <label>Ход по Z<select id="zRapid"><option value="0">G01 с подачей</option><option value="1">G00</option></select></label>
+  <label>Шаг по ширине ae, мм<input id="ae" inputmode="decimal"></label>
+  <label>Припуск под чистовой, мм<input id="fa" inputmode="decimal"></label>
+  <label>Коррекция на чистовом<select id="comp"><option value="">нет (траектория центра)</option><option value="G41">G41</option><option value="G42">G42</option></select></label>
+  <label>Номер D (коррекция)<input id="dOffset" inputmode="numeric"></label>
+  <label id="dirWrap">Направление обхода (без коррекции)<select id="dir"><option value="CW">по часовой в плоскости X–C</option><option value="CCW">против часовой</option></select></label>
+  <label>X в программе<select id="xMode"><option value="diameter">диаметр</option><option value="radius">радиус</option></select></label>
+</div></div>
+
+<div class="card"><h2>Подготовка и конец (твои M-коды)</h2>
+<label>Перед G12.1 (инструмент, ось C, обороты)<textarea id="pre" placeholder="T0101&#10;..."></textarea></label>
+<label style="margin-top:8px">После G13.1<textarea id="post" placeholder="..."></textarea></label>
+</div>
+
+<div class="row"><button class="btn" id="calc">Рассчитать</button><button class="btn sec" id="reset">Сбросить</button></div>
+<div id="errs" class="err"></div>
+
+<div id="out" class="hide">
+  <div class="card" style="margin-top:12px"><h2>Траектория (вид в плоскости X–C)</h2>
+    <svg id="svg" viewBox="-60 -60 120 120" role="img" aria-label="Схема траектории"></svg>
+    <div class="legend"><span><i style="background:var(--stock)"></i>заготовка</span><span><i style="background:var(--ink)"></i>деталь</span><span><i style="background:var(--rough)"></i>черновые</span><span><i style="background:var(--fin)"></i>чистовой</span></div>
+  </div>
+  <div class="card"><h2>Итог</h2><div class="sum" id="sum"></div></div>
+  <div class="card"><h2>G-код</h2>
+    <pre id="code"></pre>
+    <div class="row"><button class="btn" id="copy">Копировать</button><button class="btn sec" id="share">Поделиться</button></div>
+  </div>
+  <div class="card"><details><summary>Проверка: реальные X и C в точках контура</summary>
+    <div style="margin-top:8px"><table id="real"></table></div>
+    <div class="legend" style="margin-top:8px">Радиус и угол точки вне полярки. Сверь с эскизом детали.</div></details></div>
+</div>
+</main>
+<script>/* Расчёт полярной интерполяции Fanuc (G12.1 / G13.1) для токарного станка с приводным инструментом.
+ * Плоскость полярки: x — радиальная координата (в программе X = 2*x при диаметральном программировании),
+ * c — виртуальная ось в мм (в программе C = c). Фреза осью вдоль Z, резание боковой частью.
+ */
+(function (root) {
+  'use strict';
+  var D2R = Math.PI / 180;
+
+  function fmt(v) {
+    var s = (Math.round(v * 1000) / 1000).toFixed(3).replace(/0+$/, '');
+    if (s.slice(-1) === '.') s += '0';
+    if (s === '-0.0') s = '0.0';
+    return s;
+  }
+  function P(x, c) { return { x: x, c: c }; }
+  // точка в системе (a вдоль нормали n, b вдоль касательной t); n = угол phi (град)
+  function frame(phiDeg) {
+    var ph = phiDeg * D2R;
+    var n = { x: Math.cos(ph), c: Math.sin(ph) };
+    return { n: n, t: { x: -n.c, c: n.x },
+      at: function (a, b) { return P(a * n.x + b * (-n.c), a * n.c + b * n.x); } };
+  }
+
+  function validate(p) {
+    var e = [];
+    function pos(v, name) { if (!(v > 0)) e.push(name + ' должен быть больше 0'); }
+    pos(p.D, 'Диаметр заготовки'); pos(p.toolD, 'Диаметр фрезы'); pos(p.L, 'Длина лыски/грани по Z');
+    pos(p.ae, 'Шаг по ширине (ae)'); pos(p.F, 'Подача F');
+    if (p.fa < 0) e.push('Припуск под чистовой не может быть отрицательным');
+    if (p.ap < 0) e.push('Шаг по Z (ap) не может быть отрицательным');
+    return e;
+  }
+
+  // уровни апофемы (расстояния от оси до грани) для черновых проходов и чистовой
+  function levels(R, aT, ae, fa) {
+    var out = [], a = R - ae;
+    while (a > aT + fa + 1e-9) { out.push(a); a -= ae; }
+    if (fa > 1e-9) out.push(aT + fa);
+    return out;
+  }
+  function zLevels(p) {
+    var zs = [], zEnd = p.zFace - p.L;
+    if (p.ap > 0 && p.ap < p.L) {
+      for (var z = p.zFace - p.ap; z > zEnd + 1e-9; z -= p.ap) zs.push(z);
+    }
+    zs.push(zEnd);
+    return zs;
+  }
+
+  /* ---------- ЛЫСКИ ---------- */
+  function buildFlats(p) {
+    var err = validate(p);
+    var R = p.D / 2, r = p.toolD / 2, aT;
+    if (p.flatMode === 'A') aT = p.size / 2;            // размер под ключ (2 лыски) / расстояние*2
+    else if (p.flatMode === 'h') aT = p.size;           // расстояние от оси
+    else if (p.flatMode === 't') aT = R - p.size;       // глубина
+    else aT = p.size - R;                               // остаток от противоположной образующей (1 лыска)
+    if (p.count === 2 && p.flatMode === 'A') aT = p.size / 2;
+    if (!(aT >= 0)) err.push('Размер лыски даёт расстояние от оси < 0');
+    if (aT + p.fa >= R) err.push('Лыска не снимает материал (расстояние от оси ≥ радиуса заготовки)');
+    if (err.length) return { errors: err };
+    var lv = levels(R, aT, p.ae, p.fa);
+    var tc = Math.sqrt((R + r) * (R + r) - (aT + r) * (aT + r)) + 1.0;
+    var lead = r + p.fa + 1.0;
+    var comp = p.comp || null;
+    var passes = [];
+    var flats = [];
+    for (var f = 0; f < p.count; f++) flats.push(p.phi + 180 * f);
+    var zs = zLevels(p);
+    zs.forEach(function (z) {
+      flats.forEach(function (phi) {
+        var fr = frame(phi);
+        // инструмент лежит со стороны нормали n. t_frame = rot(n,+90).
+        // G42 (инструмент справа от движения) => движение по +t_frame; G41 => по -t_frame.
+        var sign = (comp === 'G41') ? -1 : (comp === 'G42') ? 1 : (p.dir === 'CW' ? -1 : 1);
+        var b0 = -sign * tc, b1 = sign * tc;
+        lv.forEach(function (a) {
+          var s0 = fr.at(a + r, b0), s1 = fr.at(a + r, b1);
+          passes.push({ kind: 'rough', z: z, comp: null, pre: s0, path: [s0, s1], post: null,
+            centre: [s0, s1], retract: true, phi: phi, a: a });
+        });
+        if (comp) {
+          var q0 = fr.at(aT + lead, b0), c0 = fr.at(aT, b0), c1 = fr.at(aT, b1), q1 = fr.at(aT + lead, b1);
+          passes.push({ kind: 'finish', z: z, comp: comp, pre: q0, path: [c0, c1], post: q1,
+            centre: [fr.at(aT + r, b0), fr.at(aT + r, b1)], retract: true, phi: phi, a: aT });
+        } else {
+          var f0 = fr.at(aT + r, b0), f1 = fr.at(aT + r, b1);
+          passes.push({ kind: 'finish', z: z, comp: null, pre: f0, path: [f0, f1], post: null,
+            centre: [f0, f1], retract: true, phi: phi, a: aT });
+        }
+      });
+    });
+    return { errors: [], passes: passes, aT: aT, R: R, r: r, chord: 2 * Math.sqrt(R * R - aT * aT),
+      kind: 'flats', flats: flats, retractBetween: true, zs: zs };
+  }
+
+  /* ---------- МНОГОГРАННИК ---------- */
+  function buildPolygon(p) {
+    var err = validate(p);
+    var R = p.D / 2, r = p.toolD / 2, N = Math.round(p.N);
+    if (!(N >= 3)) err.push('Число граней должно быть ≥ 3');
+    var aT = 0;
+    if (!err.length) {
+      var cosv = Math.cos(Math.PI / N);
+      aT = (p.sizeMode === 'corners') ? (p.size / 2) * cosv : p.size / 2;
+      if (!(aT > 0)) err.push('Размер многогранника должен быть больше 0');
+      if (aT + p.fa >= R) err.push('Многогранник не снимает материал (размер под ключ ≥ диаметра заготовки)');
+    }
+    if (err.length) return { errors: err };
+    var comp = p.comp || null;
+    // направление обхода в плоскости: G41 (слева) => контур справа => по часовой (CW, угол убывает)
+    var step = comp === 'G41' ? -1 : (comp === 'G42' ? 1 : (p.dir === 'CW' ? -1 : 1));
+    var half = 180 / N; // град
+    function polyPts(a, closeAtMid) {
+      var Rc = a / Math.cos(Math.PI / N), pts = [];
+      var th0 = p.phi;
+      pts.push(P(a * Math.cos(th0 * D2R), a * Math.sin(th0 * D2R)));
+      for (var k = 0; k < N; k++) {
+        var ang = th0 + step * (half + k * 2 * half);
+        pts.push(P(Rc * Math.cos(ang * D2R), Rc * Math.sin(ang * D2R)));
+      }
+      pts.push(pts[0]);
+      return pts;
+    }
+    var n0 = { x: Math.cos(p.phi * D2R), c: Math.sin(p.phi * D2R) };
+    function along(a) { return P(a * n0.x, a * n0.c); }
+    var lv = levels(R, aT, p.ae, p.fa);
+    var lead = r + p.fa + 1.0;
+    var Rout = R + r + 1.0;
+    var passes = [];
+    zLevels(p).forEach(function (z, zi) {
+      lv.forEach(function (a) {
+        var c = polyPts(a + r);
+        passes.push({ kind: 'rough', z: z, comp: null, pre: along(Rout), path: c, post: along(Rout),
+          centre: c, retract: false, a: a });
+      });
+      if (comp) {
+        var cp = polyPts(aT);
+        var cc = polyPts(aT + r);
+        passes.push({ kind: 'finish', z: z, comp: comp, pre: along(aT + lead), path: cp, post: along(aT + lead),
+          centre: cc, retract: false, a: aT });
+      } else {
+        var c2 = polyPts(aT + r);
+        passes.push({ kind: 'finish', z: z, comp: null, pre: along(Rout), path: c2, post: along(Rout),
+          centre: c2, retract: false, a: aT });
+      }
+    });
+    return { errors: [], passes: passes, aT: aT, R: R, r: r, kind: 'polygon', N: N,
+      across_corners: 2 * aT / Math.cos(Math.PI / N), retractBetween: false, zs: zLevels(p) };
+  }
+
+  /* ---------- G-КОД ---------- */
+  function gcode(model, p) {
+    var L = [];
+    var dia = p.xMode !== 'radius';
+    function X(x) { return fmt(dia ? 2 * x : x); }
+    function mv(pt) { return ' X' + X(pt.x) + ' C' + fmt(pt.c); }
+    var zSafe = p.zFace + p.zClear;
+    var xSafe = Math.max(model.R + model.r + 5, 0);
+    var feed = fmt(p.F), fz = fmt(p.Fz || p.F);
+    var title = model.kind === 'flats'
+      ? (p.count === 2 ? 'ЛЫСКИ С ДВУХ СТОРОН' : 'ЛЫСКА С ОДНОЙ СТОРОНЫ')
+      : ('МНОГОГРАННИК N=' + model.N);
+    L.push('(' + title + ' G12.1)');
+    L.push('(ЗАГОТОВКА D' + fmt(p.D) + ' / ФРЕЗА D' + fmt(p.toolD) + ' / Z ' + fmt(p.zFace) + ' ... ' + fmt(p.zFace - p.L) + ')');
+    if (model.kind === 'flats') L.push('(РАССТОЯНИЕ ОТ ОСИ ДО ЛЫСКИ ' + fmt(model.aT) + ', ХОРДА ' + fmt(model.chord) + ')');
+    else L.push('(РАЗМЕР ПОД КЛЮЧ ' + fmt(2 * model.aT) + ', ПО УГЛАМ ' + fmt(model.across_corners) + ')');
+    L.push('(X ' + (dia ? 'ПО ДИАМЕТРУ' : 'ПО РАДИУСУ') + ', C В ММ В ПЛОСКОСТИ ПОЛЯРКИ)');
+    (p.pre || '').split('\n').forEach(function (l) { if (l.trim()) L.push(l.trim()); });
+    L.push('G00 X' + X(xSafe) + ' Z' + fmt(zSafe));
+    L.push('G12.1');
+    var curZ = zSafe, first = true, lastPost = null;
+    function zmove(z) {
+      if (Math.abs(z - curZ) < 1e-9) return;
+      L.push((p.zRapid ? 'G00' : 'G01') + ' Z' + fmt(z) + (p.zRapid ? '' : ' F' + fz));
+      curZ = z;
+    }
+    var prevZ = null;
+    model.passes.forEach(function (ps, i) {
+      var needRetract = model.retractBetween || prevZ === null || Math.abs(ps.z - prevZ) > 1e-9;
+      if (needRetract) zmove(zSafe);
+      var label = (ps.kind === 'rough' ? 'ЧЕРНОВОЙ' : 'ЧИСТОВОЙ') + ' a=' + fmt(ps.a);
+      L.push('(' + label + ' Z' + fmt(ps.z) + ')');
+      L.push('G01' + mv(ps.pre) + ' F' + feed);
+      zmove(ps.z);
+      if (ps.comp) {
+        L.push(ps.comp + ' G01' + mv(ps.path[0]) + (p.dOffset ? ' D' + p.dOffset : '') + ' F' + feed);
+        for (var k = 1; k < ps.path.length; k++) L.push('G01' + mv(ps.path[k]));
+        L.push('G40 G01' + mv(ps.post));
+      } else {
+        var k0 = 1;
+        if (Math.hypot(ps.pre.x - ps.path[0].x, ps.pre.c - ps.path[0].c) > 1e-9) k0 = 0;
+        for (var k2 = k0; k2 < ps.path.length; k2++) L.push('G01' + mv(ps.path[k2]));
+        if (ps.post) L.push('G01' + mv(ps.post));
+      }
+      prevZ = ps.z;
+    });
+    zmove(zSafe);
+    L.push('G13.1');
+    L.push('G00 X' + X(xSafe));
+    (p.post || '').split('\n').forEach(function (l) { if (l.trim()) L.push(l.trim()); });
+    return L.join('\n');
+  }
+
+  // таблица для самопроверки: реальные полярные координаты опорных точек контура
+  function realPolar(pt) {
+    return { r: Math.hypot(pt.x, pt.c), th: Math.atan2(pt.c, pt.x) / D2R };
+  }
+
+  var api = { fmt: fmt, buildFlats: buildFlats, buildPolygon: buildPolygon, gcode: gcode, realPolar: realPolar, validate: validate };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Polar = api;
+})(typeof self !== 'undefined' ? self : this);
+</script>
+<script>
+(function(){
+'use strict';
+var KEY='polar-v1';
+var DEF={mode:'flat1',D:30,toolD:10,zFace:0,L:12,zClear:3,ap:0,ae:3,fa:0.2,F:400,zRapid:'0',flatMode:'h',sizeMode:'flats',size:10,N:6,phi:0,comp:'',dOffset:1,dir:'CW',xMode:'diameter',pre:'',post:''};
+var S=Object.assign({},DEF);
+try{var raw=localStorage.getItem(KEY); if(raw)S=Object.assign({},DEF,JSON.parse(raw));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+var $=function(id){return document.getElementById(id);};
+var numIds=['D','toolD','zFace','L','zClear','ap','ae','fa','F','size','N','phi','dOffset'];
+var strIds=['flatMode','sizeMode','comp','dir','xMode','zRapid','pre','post'];
+function num(v){return parseFloat(String(v).replace(',','.'));}
+function fill(){
+  numIds.forEach(function(i){$(i).value=S[i];});
+  strIds.forEach(function(i){$(i).value=S[i];});
+  setMode(S.mode,true);
+}
+function read(){
+  numIds.forEach(function(i){var v=num($(i).value); S[i]=isNaN(v)?0:v;});
+  strIds.forEach(function(i){S[i]=$(i).value;});
+}
+function setMode(m,noSave){
+  S.mode=m;
+  document.querySelectorAll('#mode button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.m===m?'true':'false');});
+  var poly=m==='poly';
+  $('flatModeWrap').classList.toggle('hide',poly||m==='flat2');
+  $('polySizeWrap').classList.toggle('hide',!poly);
+  $('NWrap').classList.toggle('hide',!poly);
+  $('shapeTitle').textContent=poly?'Многогранник':(m==='flat2'?'Лыски с двух сторон':'Лыска с одной стороны');
+  updSizeLabel();
+  if(!noSave)save();
+}
+function updSizeLabel(){
+  var l='Размер, мм';
+  if(S.mode==='flat2')l='Размер под ключ между лысками, мм';
+  else if(S.mode==='flat1')l={h:'Расстояние от оси до лыски, мм',t:'Глубина лыски, мм',T:'Размер от противоположной стороны, мм'}[$('flatMode').value];
+  else l=$('sizeMode').value==='corners'?'Размер по углам, мм':'Размер под ключ, мм';
+  $('sizeLabel').textContent=l;
+}
+function params(){
+  read();
+  var comp=S.comp||null;
+  var p={D:S.D,toolD:S.toolD,zFace:S.zFace,L:S.L,zClear:S.zClear,ap:S.ap,ae:S.ae,fa:S.fa,F:S.F,Fz:S.F,
+    zRapid:S.zRapid==='1',phi:S.phi,dir:S.dir,comp:comp,dOffset:S.dOffset,xMode:S.xMode,pre:S.pre,post:S.post,size:S.size};
+  if(S.mode==='poly'){p.N=S.N;p.sizeMode=S.sizeMode;}
+  else if(S.mode==='flat2'){p.count=2;p.flatMode='A';}
+  else {p.count=1;p.flatMode=S.flatMode;}
+  return p;
+}
+var lastCode='';
+function calc(){
+  var p=params(); save();
+  var m=S.mode==='poly'?Polar.buildPolygon(p):Polar.buildFlats(p);
+  if(m.errors.length){$('errs').textContent=m.errors.join('. ');$('out').classList.add('hide');return;}
+  $('errs').textContent='';
+  lastCode=Polar.gcode(m,p);
+  $('code').textContent=lastCode;
+  $('out').classList.remove('hide');
+  draw(m,p); summary(m,p); realTable(m);
+  $('out').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function summary(m,p){
+  var f=Polar.fmt, h='';
+  if(m.kind==='flats'){
+    h+='Расстояние от оси до лыски: <b>'+f(m.aT)+'</b> мм · хорда: <b>'+f(m.chord)+'</b> мм<br>';
+    h+='X в программе для лыски: <b>'+f(p.xMode==='radius'?m.aT:2*m.aT)+'</b>';
+  }else{
+    h+='Размер под ключ: <b>'+f(2*m.aT)+'</b> · по углам: <b>'+f(m.across_corners)+'</b> мм<br>';
+    h+=(m.across_corners>p.D?'Углы выходят за заготовку: <b>есть необработанные цилиндрические участки на углах</b>':'Заготовка обрабатывается по всем граням, диаметр заготовки больше размера по углам');
+  }
+  h+='<br>Проходов: <b>'+m.passes.length+'</b> · слоёв по Z: <b>'+m.zs.length+'</b>';
+  $('sum').innerHTML=h;
+}
+function realTable(m){
+  var rows=[];
+  var seen=0;
+  var finals=m.passes.filter(function(x){return x.kind==='finish';});
+  var pts=[];
+  if(m.kind==='flats'){
+    var fl={};
+    finals.forEach(function(x){ if(!fl[x.phi]){fl[x.phi]=1; x.path.forEach(function(q,i){pts.push(['лыска '+(Object.keys(fl).length)+' т.'+(i+1),q]);});}});
+  }else{
+    var x0=finals[0]; x0.path.slice(0,-1).forEach(function(q,i){pts.push([i===0?'середина грани 1':'вершина '+i,q]);});
+  }
+  var t='<tr><th>Точка</th><th>X пл.</th><th>C пл.</th><th>R</th><th>Угол°</th></tr>';
+  pts.forEach(function(a){var q=a[1],rp=Polar.realPolar(q);t+='<tr><td>'+a[0]+'</td><td>'+Polar.fmt(q.x)+'</td><td>'+Polar.fmt(q.c)+'</td><td>'+Polar.fmt(rp.r)+'</td><td>'+Polar.fmt(rp.th)+'</td></tr>';});
+  $('real').innerHTML=t+'<tr><td colspan="5" style="text-align:left;color:var(--mut)">Для контура с коррекцией — точки контура детали; без коррекции — траектория центра.</td></tr>';
+}
+function draw(m,p){
+  var R=m.R, ext=R+m.r*2+6, f=Polar.fmt;
+  var svg=$('svg'); var vb=(-ext)+' '+(-ext)+' '+(2*ext)+' '+(2*ext);
+  svg.setAttribute('viewBox',vb);
+  var sw=ext/120; // толщина линий
+  function P(q){return (q.x).toFixed(3)+','+(-q.c).toFixed(3);} // c вверх
+  var h='';
+  h+='<line x1="'+(-ext)+'" y1="0" x2="'+ext+'" y2="0" stroke="var(--line)" stroke-width="'+sw+'"/>';
+  h+='<line x1="0" y1="'+(-ext)+'" x2="0" y2="'+ext+'" stroke="var(--line)" stroke-width="'+sw+'"/>';
+  h+='<circle cx="0" cy="0" r="'+R+'" fill="none" stroke="var(--stock)" stroke-width="'+(sw*2)+'" stroke-dasharray="'+(sw*8)+' '+(sw*5)+'"/>';
+  // контур детали
+  var N=m.kind==='polygon'?m.N:0;
+  if(m.kind==='polygon'){
+    var Rc=m.aT/Math.cos(Math.PI/N),pts=[];
+    for(var k=0;k<N;k++){var a=(p.phi+180/N+k*360/N)*Math.PI/180;pts.push((Rc*Math.cos(a)).toFixed(3)+','+(-Rc*Math.sin(a)).toFixed(3));}
+    h+='<polygon points="'+pts.join(' ')+'" fill="var(--acc2)" fill-opacity=".6" stroke="var(--ink)" stroke-width="'+(sw*2.4)+'"/>';
+  }else{
+    // деталь: круг с отсечёнными лысками
+    h+='<circle cx="0" cy="0" r="'+R+'" fill="var(--acc2)" fill-opacity=".5" stroke="var(--ink)" stroke-width="'+(sw*1.2)+'"/>';
+    m.flats.forEach(function(ph){var a=ph*Math.PI/180,nx=Math.cos(a),nc=Math.sin(a),w=Math.sqrt(R*R-m.aT*m.aT);
+      var x1=m.aT*nx+(-nc)*w, y1=m.aT*nc+nx*w, x2=m.aT*nx-(-nc)*w, y2=m.aT*nc-nx*w;
+      h+='<line x1="'+x1.toFixed(3)+'" y1="'+(-y1).toFixed(3)+'" x2="'+x2.toFixed(3)+'" y2="'+(-y2).toFixed(3)+'" stroke="var(--ink)" stroke-width="'+(sw*3)+'"/>';
+    });
+  }
+  // траектории центра фрезы: только уникальные по z (первый слой)
+  var z0=m.passes[m.passes.length-1].z;
+  m.passes.forEach(function(ps){
+    if(ps.z!==z0)return;
+    var col=ps.kind==='rough'?'var(--rough)':'var(--fin)';
+    h+='<polyline points="'+ps.centre.map(P).join(' ')+'" fill="none" stroke="'+col+'" stroke-width="'+(sw*1.4)+'" stroke-linejoin="round"/>';
+  });
+  // фреза в стартовой точке чистового
+  var fp=m.passes[m.passes.length-1].centre[0];
+  h+='<circle cx="'+fp.x.toFixed(3)+'" cy="'+(-fp.c).toFixed(3)+'" r="'+m.r+'" fill="none" stroke="var(--fin)" stroke-width="'+sw+'" stroke-dasharray="'+(sw*3)+' '+(sw*3)+'"/>';
+  svg.innerHTML=h;
+}
+// события
+document.querySelectorAll('#mode button').forEach(function(b){b.addEventListener('click',function(){read();setMode(b.dataset.m);});});
+['flatMode','sizeMode'].forEach(function(i){$(i).addEventListener('change',function(){updSizeLabel();});});
+$('comp').addEventListener('change',function(){$('dirWrap').classList.toggle('hide',!!$('comp').value);});
+$('calc').addEventListener('click',calc);
+$('reset').addEventListener('click',function(){S=Object.assign({},DEF);save();fill();$('out').classList.add('hide');$('errs').textContent='';$('dirWrap').classList.remove('hide');});
+$('copy').addEventListener('click',function(){
+  function done(){$('copy').textContent='Скопировано';setTimeout(function(){$('copy').textContent='Копировать';},1500);}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(lastCode).then(done,function(){fallback();});}else fallback();
+  function fallback(){var ta=document.createElement('textarea');ta.value=lastCode;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch(e){}document.body.removeChild(ta);}
+});
+$('share').addEventListener('click',function(){
+  if(navigator.share){navigator.share({title:'Полярка G12.1',text:lastCode}).catch(function(){});}
+  else{$('copy').click();}
+});
+fill(); $('dirWrap').classList.toggle('hide',!!$('comp').value);
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
+})();
+</script>
+</body>
+</html>
