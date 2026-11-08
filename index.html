@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Полярка">
+<meta name="apple-mobile-web-app-title" content="G12.1">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#14181d">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<title>Полярка G12.1</title>
+<title>G12.1 · Фрезеровка</title>
 <style>
 :root{--bg:#f3f4f6;--card:#fff;--ink:#14181d;--mut:#5d6672;--line:#d8dce2;--acc:#0b6bcb;--acc2:#e8f1fc;--warn:#9a5b00;--warnbg:#fff4e0;--err:#b3261e;--rough:#c77700;--fin:#0b8a4a;--stock:#9aa3ae}
 @media (prefers-color-scheme:dark){:root{--bg:#0e1114;--card:#171b20;--ink:#e8ebef;--mut:#98a2ae;--line:#2a3038;--acc:#5aa8ff;--acc2:#16283d;--warn:#f0b35a;--warnbg:#2a2113;--err:#ff8a80;--rough:#f0a53a;--fin:#4cd08a;--stock:#6b7580}}
@@ -19,23 +19,31 @@
 html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
 body{padding:max(12px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom))}
 main{max-width:640px;margin:0 auto}
-h1{font-size:20px;margin:6px 0 12px}
-.seg{display:flex;gap:6px;margin-bottom:12px}
-.seg button{flex:1;padding:10px 6px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;font:inherit;font-weight:600}
-.seg button[aria-pressed=true]{background:var(--acc);color:#fff;border-color:var(--acc)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:4px 0 8px}
+h1{font-size:19px;margin:0}
+.xsel{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.xsel button{border:0;background:transparent;color:var(--ink);padding:7px 10px;font:inherit;font-size:14px;font-weight:600}
+.xsel button[aria-pressed=true]{background:var(--acc);color:#fff}
+.xlab{font-size:12px;color:var(--mut);margin-bottom:2px;text-align:right}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;margin:0 -16px;padding-left:16px;padding-right:16px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto;padding:9px 12px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;font:inherit;font-size:15px;font-weight:600;white-space:nowrap}
+.tabs button[aria-pressed=true]{background:var(--acc);color:#fff;border-color:var(--acc)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
 .card h2{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);margin:0 0 8px}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid .full{grid-column:1/-1}
 label{display:block;font-size:13px;color:var(--mut)}
 input,select,textarea{width:100%;margin-top:3px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit;font-size:16px}
-textarea{font-family:ui-monospace,Menlo,monospace;font-size:13px;min-height:60px}
+textarea{font-family:ui-monospace,Menlo,monospace;font-size:14px;min-height:80px}
 .hide{display:none!important}
 .row{display:flex;gap:8px;margin-top:8px}
 .btn{flex:1;padding:12px;border-radius:10px;border:1px solid var(--acc);background:var(--acc);color:#fff;font:inherit;font-weight:600}
 .btn.sec{background:var(--card);color:var(--acc)}
-.err{color:var(--err);font-weight:600;margin:6px 0}
+.err{color:var(--err);font-weight:600;margin:8px 0}
 .note{background:var(--warnbg);color:var(--warn);border-radius:10px;padding:10px;font-size:13px;margin-bottom:12px}
-pre{margin:0;white-space:pre;overflow:auto;font:13px/1.45 ui-monospace,Menlo,monospace;max-height:420px;-webkit-user-select:text;user-select:text}
+.hint{font-size:12px;color:var(--mut);margin-top:3px}
+pre{margin:0;white-space:pre;overflow:auto;font:13px/1.45 ui-monospace,Menlo,monospace;max-height:460px;-webkit-user-select:text;user-select:text}
 svg{width:100%;height:auto;display:block;background:var(--bg);border-radius:10px;border:1px solid var(--line)}
 .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin-top:6px}
 .legend i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:4px}
@@ -47,61 +55,26 @@ details summary{cursor:pointer;font-weight:600;padding:4px 0}
 </head>
 <body>
 <main>
-<h1>Полярка G12.1 · Fanuc</h1>
-<div class="seg" id="mode">
-  <button data-m="flat1" aria-pressed="true">1 лыска</button>
-  <button data-m="flat2" aria-pressed="false">2 лыски</button>
-  <button data-m="poly" aria-pressed="false">Многогранник</button>
+<div class="top">
+  <h1>G12.1 · Фрезеровка</h1>
+  <div><div class="xlab">X в программе</div><div class="xsel" id="xsel"><button data-x="diameter" aria-pressed="true">диаметр</button><button data-x="radius" aria-pressed="false">радиус</button></div></div>
 </div>
-
-<div class="note">Выдаётся только контур: подход, обход, отход. X в программе по диаметру, подачу, Z и M-коды добавляешь сам. Первый раз проверь в симуляторе и покадрово.</div>
-
-<div class="card"><h2>Заготовка и фреза</h2>
-<div class="grid">
-  <label>Диаметр заготовки, мм<input id="D" inputmode="decimal"></label>
-  <label>Диаметр фрезы, мм<input id="toolD" inputmode="decimal"></label>
-</div></div>
-
-<div class="card"><h2 id="shapeTitle">Лыска</h2>
-<div class="grid">
-  <label id="flatModeWrap">Как задан размер
-    <select id="flatMode">
-      <option value="h">Расстояние от оси до лыски</option>
-      <option value="t">Глубина лыски от поверхности</option>
-      <option value="T">Остаток от противоположной стороны</option>
-    </select></label>
-  <label id="polySizeWrap" class="hide">Как задан размер
-    <select id="sizeMode"><option value="flats">Под ключ (между гранями)</option><option value="corners">По углам</option></select></label>
-  <label><span id="sizeLabel">Размер, мм</span><input id="size" inputmode="decimal"></label>
-  <label id="NWrap" class="hide">Число граней N<input id="N" inputmode="numeric"></label>
-  <label id="cornerWrap"><span id="cornerLabel">Радиус скругления, мм (0 = без скругления)</span><input id="corner" inputmode="decimal"></label>
-  <label>Ориентация нормали, град (в плоскости C)<input id="phi" inputmode="decimal"></label>
-</div></div>
-
-<div class="card"><h2>Подход и коррекция</h2>
-<div class="grid">
-  <label>Зазор фрезы до заготовки в точках подхода и отхода, мм<input id="gap" inputmode="decimal"></label>
-  <label>Коррекция на радиус<select id="comp"><option value="">нет (траектория центра)</option><option value="G41">G41</option><option value="G42">G42</option></select></label>
-  <label id="dWrap">Номер D (коррекция)<input id="dOffset" inputmode="numeric"></label>
-  <label id="dirWrap">Направление обхода<select id="dir"><option value="CW">по часовой в плоскости X–C</option><option value="CCW">против часовой</option></select></label>
-</div></div>
-
+<div class="tabs" id="tabs"></div>
+<div class="note" id="modeNote"></div>
+<div id="form"></div>
 <div class="row"><button class="btn" id="calc">Рассчитать</button><button class="btn sec" id="reset">Сбросить</button></div>
 <div id="errs" class="err"></div>
-
+<div id="warn" class="note hide"></div>
 <div id="out" class="hide">
-  <div class="card" style="margin-top:12px"><h2>Траектория (вид в плоскости X–C)</h2>
-    <svg id="svg" viewBox="-60 -60 120 120" role="img" aria-label="Схема траектории"></svg>
-    <div class="legend"><span><i style="background:var(--stock)"></i>заготовка</span><span><i style="background:var(--ink)"></i>деталь</span><span><i style="background:var(--fin)"></i>центр фрезы</span><span><i style="background:var(--rough)"></i>подход / отход</span></div>
+  <div class="card" id="viewCard" style="margin-top:12px"><h2 id="viewTitle">Схема</h2>
+    <svg id="svg" viewBox="-60 -60 120 120" role="img" aria-label="Схема"></svg>
+    <div class="legend" id="legend"></div>
   </div>
   <div class="card"><h2>Итог</h2><div class="sum" id="sum"></div></div>
-  <div class="card"><h2>G-код контура</h2>
+  <div class="card" id="codeCard"><h2 id="codeTitle">G-код</h2>
     <pre id="code"></pre>
     <div class="row"><button class="btn" id="copy">Копировать</button><button class="btn sec" id="share">Поделиться</button></div>
   </div>
-  <div class="card"><details><summary>Проверка: реальные X и C в точках контура</summary>
-    <div style="margin-top:8px"><table id="real"></table></div>
-    <div class="legend" style="margin-top:8px">Радиус и угол точки вне полярки. Сверь с эскизом детали.</div></details></div>
 </div>
 </main>
 <script>/* Контур для полярной интерполяции Fanuc (G12.1): лыски и многогранник со скруглением углов.
@@ -249,7 +222,7 @@ details summary{cursor:pointer;font-weight:600;padding:4px 0}
   /* ---------- G-КОД (только контур) ---------- */
   function gcode(model, p) {
     var L = [];
-    function xy(pt) { return ' X' + fmt(2 * pt.x) + ' C' + fmt(pt.c); }
+    function xy(pt) { return p.map ? p.map(pt) : ' X' + fmt(p.xMode === 'radius' ? pt.x : 2 * pt.x) + ' C' + fmt(pt.c); }
     model.contours.forEach(function (c, i) {
       L.push('(' + c.label + ')');
       L.push('G01' + xy(c.pre));                       // подход
@@ -268,142 +241,601 @@ details summary{cursor:pointer;font-weight:600;padding:4px 0}
 
   function realPolar(pt) { return { r: Math.hypot(pt.x, pt.c), th: Math.atan2(pt.c, pt.x) / D2R }; }
 
-  var api = { fmt: fmt, buildFlats: buildFlats, buildPolygon: buildPolygon, gcode: gcode, realPolar: realPolar };
+  var api = { fmt: fmt, buildFlats: buildFlats, buildPolygon: buildPolygon, gcode: gcode, realPolar: realPolar, finish: finish, tess: tess, P: P };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Polar = api;
+})(typeof self !== 'undefined' ? self : this);
+</script>
+<script>/* Фрезерные разделы: паз/карман/окружность, цилиндр G07.1, отверстия, торцевание, G68, гребешок, макросы. */
+(function (root) {
+  'use strict';
+  var Polar = (typeof require !== 'undefined') ? require('./core.js') : root.Polar;
+  var fmt = Polar.fmt, P = Polar.P, D2R = Math.PI / 180;
+  function xOut(x, p) { return p.xMode === 'radius' ? x : 2 * x; }
+  function xIn(X, p) { return p.xMode === 'radius' ? X : X / 2; }
+  function tolist(a) { return a; }
+
+  /* ---------- скруглённый прямоугольник: паз, карман, круг, бобышка ---------- */
+  function rrBuild(hx, hy, rr, ccw, cx, cc, psi) {
+    var cp = Math.cos(psi * D2R), sp = Math.sin(psi * D2R);
+    function T(l) { return P(cx + l.x * cp - l.c * sp, cc + l.x * sp + l.c * cp); }
+    var A = { x: 0, c: -hy }, V = [{ pt: A, arc: null }];
+    function add(pt, arc) { var l = V[V.length - 1].pt; if (Math.hypot(pt.x - l.x, pt.c - l.c) < 1e-7) return; V.push({ pt: pt, arc: arc }); }
+    var af = rr > 0 ? { R: rr, ccw: true } : null;
+    add({ x: hx - rr, c: -hy }, null); if (rr > 0) add({ x: hx, c: -hy + rr }, af);
+    add({ x: hx, c: hy - rr }, null); if (rr > 0) add({ x: hx - rr, c: hy }, af);
+    add({ x: -hx + rr, c: hy }, null); if (rr > 0) add({ x: -hx, c: hy - rr }, af);
+    add({ x: -hx, c: -hy + rr }, null); if (rr > 0) add({ x: -hx + rr, c: -hy }, af);
+    add(A, null);
+    if (!ccw) {
+      var n = V.length - 1, rev = [{ pt: V[n].pt, arc: null }];
+      for (var k = n; k >= 1; k--) rev.push({ pt: V[k - 1].pt, arc: V[k].arc ? { R: V[k].arc.R, ccw: false } : null });
+      V = rev;
+    }
+    return { start: T(V[0].pt), segs: V.slice(1).map(function (v) { return { pt: T(v.pt), arc: v.arc }; }), T: T };
+  }
+
+  // o: hx, hy (полуразмеры: вдоль psi и поперёк), rr, psi, cx, cc, mode 'in'|'out', comp, dir, toolD, gap
+  function rrContour(o) {
+    var errors = [], warnings = [], r = o.toolD / 2, hx = o.hx, hy = o.hy, psi = o.psi || 0, rr0 = o.rr > 0 ? o.rr : 0;
+    if (!(r > 0)) errors.push('Диаметр фрезы должен быть больше 0');
+    if (!(hx > 0 && hy > 0)) errors.push('Размеры должны быть больше 0');
+    if (!(o.gap > 0) && o.mode === 'out') errors.push('Зазор должен быть больше 0');
+    if (errors.length) return { errors: errors, warnings: warnings };
+    if (hx < hy) { var t = hx; hx = hy; hy = t; psi += 90; }
+    if (rr0 > hy + 1e-9) return { errors: ['Радиус скругления не может быть больше половины меньшей стороны (' + fmt(hy) + ' мм)'], warnings: warnings };
+    var rr = rr0, comp = o.comp || null;
+    if (o.mode === 'in') {
+      if (!(hy > r + 1e-9)) return { errors: ['Фреза не помещается: диаметр фрезы ' + fmt(2 * r) + ' мм не меньше размера ' + fmt(2 * hy) + ' мм. Режь по центру без контура'], warnings: warnings };
+      if (rr < r - 1e-9) warnings.push('Радиус угла меньше радиуса фрезы: в углах останется R' + fmt(r));
+    }
+    var ccw = comp ? (o.mode === 'in' ? comp === 'G41' : comp === 'G42') : (o.dir === 'CCW');
+    function shape(d) {
+      if (o.mode === 'in') return rrBuild(hx - d, hy - d, Math.max(rr - d, 0), ccw, o.cx, o.cc, psi);
+      return rrBuild(hx + d, hy + d, rr > 0 ? rr + d : 0, ccw, o.cx, o.cc, psi);
+    }
+    var prog = shape(0), cen = shape(r);
+    var use = comp ? prog : cen;
+    var cpt = P(o.cx, o.cc), pre;
+    if (o.mode === 'in') pre = cpt;
+    else pre = rrBuild(hx, hy, rr, true, o.cx, o.cc, psi).T({ x: 0, c: -(hy + r + o.gap) });
+    var c = { pre: pre, start: use.start, segs: use.segs, post: pre, comp: comp, label: o.label || '' };
+    Polar.finish(c);
+    c.centre = Polar.finish({ start: cen.start, segs: cen.segs }).line;
+    c.progLine = Polar.finish({ start: prog.start, segs: prog.segs }).line;
+    return { errors: [], warnings: warnings, contours: [c], hx: hx, hy: hy, rr: rr, r: r, ccw: ccw };
+  }
+
+  function shapeDims(p) {
+    if (p.shape === 'circle') return { hx: p.Dc / 2, hy: p.Dc / 2, rr: p.Dc / 2, name: 'КРУГ D' + fmt(p.Dc) };
+    if (p.shape === 'slot') return { hx: p.L / 2, hy: p.W / 2, rr: p.W / 2, name: 'ПАЗ ' + fmt(p.L) + 'x' + fmt(p.W) };
+    return { hx: p.L / 2, hy: p.W / 2, rr: p.corner > 0 ? p.corner : 0, name: 'ПРЯМОУГОЛЬНИК ' + fmt(p.L) + 'x' + fmt(p.W) + (p.corner > 0 ? ' R' + fmt(p.corner) : '') };
+  }
+
+  // плоскость X–C (полярка) или X–Y
+  function buildSlot(p) {
+    var d = shapeDims(p), errs = [];
+    if (p.shape === 'slot' && p.L < p.W) errs.push('Длина паза не может быть меньше ширины');
+    var axis = p.plane === 'xy' ? 'Y' : 'C';
+    var m = rrContour({ hx: d.hx, hy: d.hy, rr: d.rr, psi: p.psi, cx: xIn(p.cx, p), cc: p.cc, mode: p.mode, comp: p.comp, dir: p.dir,
+      toolD: p.toolD, gap: p.gap, label: d.name + (p.mode === 'in' ? ' (ВНУТРИ)' : ' (СНАРУЖИ)') });
+    if (errs.length) return { errors: errs, warnings: [] };
+    if (m.errors.length) return m;
+    m.kind = 'slot'; m.axis = axis;
+    m.map = function (pt) { return ' X' + fmt(xOut(pt.x, p)) + ' ' + axis + fmt(pt.c); };
+    return m;
+  }
+
+  // цилиндр G07.1: плоскость (Z, s) с s = r·θ; в программе C в градусах
+  function buildCyl(p) {
+    var rc = p.Dcyl / 2, errs = [];
+    if (!(rc > 0)) errs.push('Диаметр цилиндра должен быть больше 0');
+    var d = shapeDims(p);
+    if (p.shape === 'slot' && p.L < p.W) errs.push('Длина паза не может быть меньше ширины');
+    var psi = p.psi;
+    if (p.orient === 'lead') {
+      if (!p.lead) errs.push('Шаг винта не может быть 0');
+      else psi = Math.atan2(2 * Math.PI * rc, p.lead) / D2R;
+    }
+    if (errs.length) return { errors: errs, warnings: [] };
+    var s0 = rc * p.theta0 * D2R;
+    var m = rrContour({ hx: d.hx, hy: d.hy, rr: d.rr, psi: psi, cx: p.Z0, cc: s0, mode: p.mode, comp: p.comp, dir: p.dir,
+      toolD: p.toolD, gap: p.gap, label: d.name + (p.mode === 'in' ? ' (ВНУТРИ)' : ' (СНАРУЖИ)') + ' НА ЦИЛИНДРЕ D' + fmt(p.Dcyl) });
+    if (m.errors.length) return m;
+    m.kind = 'cyl'; m.rc = rc; m.psi = psi;
+    m.map = function (pt) { return ' Z' + fmt(pt.x) + ' C' + fmt(pt.c / rc / D2R); };
+    // предупреждение: контур выходит за один оборот
+    var span = 0; m.contours[0].line.forEach(function (q) { span = Math.max(span, Math.abs(q.c)); });
+    if (span > Math.PI * rc + 1e-6) m.warnings.push('Контур занимает больше пол-оборота от нуля: проверь переход через 180°');
+    return m;
+  }
+
+  /* ---------- отверстия ---------- */
+  function holes(p) {
+    var pts = [], k, errs = [];
+    var cx = xIn(p.cx, p), cy = p.cy, n = Math.round(p.n);
+    if (!(n >= 1)) errs.push('Число отверстий должно быть ≥ 1');
+    if (p.pattern === 'circle' || p.pattern === 'arc') {
+      if (!(p.pcd > 0)) errs.push('Диаметр окружности центров должен быть больше 0');
+      if (p.pattern === 'arc' && n < 2) errs.push('Для дуги нужно не меньше 2 отверстий');
+    }
+    if (p.pattern === 'grid' && !(Math.round(p.ny) >= 1)) errs.push('Число рядов должно быть ≥ 1');
+    if (errs.length) return { errors: errs };
+    var sgn = p.dir === 'CW' ? -1 : 1;
+    if (p.pattern === 'circle') for (k = 0; k < n; k++) { var a = (p.a0 + sgn * 360 * k / n) * D2R; pts.push({ x: cx + p.pcd / 2 * Math.cos(a), y: cy + p.pcd / 2 * Math.sin(a) }); }
+    else if (p.pattern === 'arc') for (k = 0; k < n; k++) { var a2 = (p.a0 + sgn * p.sweep * k / (n - 1)) * D2R; pts.push({ x: cx + p.pcd / 2 * Math.cos(a2), y: cy + p.pcd / 2 * Math.sin(a2) }); }
+    else if (p.pattern === 'line') { var x0 = xIn(p.x0, p); for (k = 0; k < n; k++) { var a3 = p.angle * D2R; pts.push({ x: x0 + k * p.pitch * Math.cos(a3), y: p.y0 + k * p.pitch * Math.sin(a3) }); } }
+    else { var xg = xIn(p.x0, p), ny = Math.round(p.ny); for (var j = 0; j < ny; j++) for (k = 0; k < n; k++) pts.push({ x: xg + k * p.px, y: p.y0 + j * p.py }); }
+    var lines = [], cyc = (p.cycle || '').trim();
+    pts.forEach(function (q, i) {
+      var pos;
+      if (p.plane === 'xc') {
+        var rho = Math.hypot(q.x, q.y), th = rho < 1e-9 ? 0 : Math.atan2(q.y, q.x) / D2R; if (th < 0) th += 360; if (th > 359.9995) th = 0;
+        pos = ' X' + fmt(xOut(rho, p)) + ' C' + fmt(th);
+      } else pos = ' X' + fmt(xOut(q.x, p)) + ' Y' + fmt(q.y);
+      lines.push((i === 0 && cyc ? cyc : '') + pos);
+    });
+    if (cyc && /^G8[1-9]/.test(cyc)) lines.push('G80');
+    return { errors: [], pts: pts, lines: lines, text: lines.join('\n') };
+  }
+
+  /* ---------- торцевое фрезерование ---------- */
+  function linspace(a, b, n) { var o = []; for (var i = 0; i < n; i++) o.push(n === 1 ? (a + b) / 2 : a + (b - a) * i / (n - 1)); return o; }
+  function face(p) {
+    var errs = [], r = p.toolD / 2, cx = xIn(p.cx, p), cy = p.cy;
+    if (!(r > 0)) errs.push('Диаметр фрезы должен быть больше 0');
+    if (!(p.aePct > 0 && p.aePct <= 100)) errs.push('Перекрытие (ширина прохода) должно быть от 0 до 100 % диаметра фрезы');
+    if (!(p.over >= 0)) errs.push('Выход оси фрезы за край не может быть отрицательным');
+    var alongX = p.pass === 'x', halfAlong, halfAcross;
+    if (p.area === 'disk') { if (!(p.Dd > 0)) errs.push('Диаметр заготовки должен быть больше 0'); halfAlong = halfAcross = p.Dd / 2; }
+    else { if (!(p.A > 0 && p.B > 0)) errs.push('Размеры площадки должны быть больше 0'); halfAlong = (alongX ? p.A : p.B) / 2; halfAcross = (alongX ? p.B : p.A) / 2; }
+    if (errs.length) return { errors: errs };
+    var aeMax = p.aePct / 100 * 2 * r, ys;
+    if (2 * halfAcross <= 2 * r) ys = [0];
+    else { var first = -halfAcross + r, last = halfAcross - r, n = Math.ceil((last - first) / aeMax - 1e-9) + 1; ys = linspace(first, last, n); }
+    if (p.first === '+') ys = ys.slice().reverse();
+    var warnings = [];
+    if (p.over < r) warnings.push('Ось фрезы выходит за край меньше радиуса фрезы (' + fmt(r) + ' мм): фреза не покинет материал полностью');
+    var zig = p.mode === 'zigzag', passes = [];
+    ys.forEach(function (y, i) {
+      var ext;
+      if (p.area === 'disk') { var dy = zig ? 0 : Math.max(0, Math.abs(y) - r); ext = Math.sqrt(Math.max(0, halfAlong * halfAlong - dy * dy)); }
+      else ext = halfAlong;
+      var half = ext + p.over, dirSign = (zig && i % 2 === 1) ? -1 : 1;
+      var s = -dirSign * half, e = dirSign * half;
+      passes.push({ y: y, s: s, e: e });
+    });
+    function pt(along, across) { return alongX ? { x: cx + along, y: cy + across } : { x: cx + across, y: cy + along }; }
+    function str(q) { return ' X' + fmt(xOut(q.x, p)) + ' Y' + fmt(q.y); }
+    var lines = [];
+    passes.forEach(function (ps, i) {
+      lines.push('(ПРОХОД ' + (i + 1) + ')');
+      var a = pt(ps.s, ps.y), b = pt(ps.e, ps.y);
+      if (zig) {
+        if (i === 0) lines.push('G01' + str(a)); else lines.push('G01' + str(a));
+      } else lines.push('G00' + str(a));
+      lines.push('G01' + str(b));
+    });
+    var step = ys.length > 1 ? Math.abs(ys[1] - ys[0]) : 0;
+    return { errors: [], warnings: warnings, passes: passes.map(function (ps) { return [pt(ps.s, ps.y), pt(ps.e, ps.y)]; }), lines: lines, text: lines.join('\n'),
+      n: ys.length, step: step, overlap: step ? (1 - step / (2 * r)) * 100 : 100, r: r, area: p.area, halfAlong: halfAlong, halfAcross: halfAcross, alongX: alongX, cx: cx, cy: cy };
+  }
+
+  /* ---------- поворот G68 ---------- */
+  function rot68(p) {
+    var errs = [];
+    if (isNaN(p.angle)) errs.push('Укажи угол');
+    var cx = xIn(p.cx, p), cy = p.cy, ca = Math.cos(p.angle * D2R), sa = Math.sin(p.angle * D2R);
+    var nums = [];
+    (p.pts || '').split('\n').forEach(function (ln) {
+      var m = ln.replace(/,/g, '.').match(/-?\d+(?:\.\d+)?|-?\.\d+/g);
+      if (m && m.length >= 2) nums.push({ X: parseFloat(m[0]), y: parseFloat(m[1]) });
+    });
+    if (errs.length) return { errors: errs };
+    var out = ['G68 X' + fmt(p.cx) + ' Y' + fmt(cy) + ' R' + fmt(p.angle), '(КООРДИНАТЫ В ПОВЁРНУТОЙ СИСТЕМЕ — КАК ДО ПОВОРОТА)', 'G69'];
+    var rotated = nums.map(function (q) {
+      var x = xIn(q.X, p), dx = x - cx, dy = q.y - cy;
+      return { x: cx + dx * ca - dy * sa, y: cy + dx * sa + dy * ca };
+    });
+    var lines = rotated.map(function (q, i) { return 'T' + (i + 1) + ' X' + fmt(xOut(q.x, p)) + ' Y' + fmt(q.y); });
+    return { errors: [], g68: out.slice(0, 1).concat(['...', 'G69']).join('\n'), rotated: rotated, lines: lines, text: out.slice(0, 1).concat(['...', 'G69']).join('\n') + (lines.length ? '\n\n(ТОЧКИ ПОСЛЕ ПОВОРОТА, БЕЗ G68)\n' + lines.join('\n') : '') };
+  }
+
+  /* ---------- гребешок и шероховатость ---------- */
+  function scallop(p) {
+    var errs = [], Rt = p.Rt, Re = Rt;
+    if (!(Rt > 0)) errs.push('Радиус инструмента должен быть больше 0');
+    if (p.surf !== 'flat') {
+      if (!(p.Rs > 0)) errs.push('Радиус поверхности должен быть больше 0');
+      else if (p.surf === 'convex') Re = Rt * p.Rs / (Rt + p.Rs);
+      else if (p.Rs <= Rt) errs.push('Радиус вогнутой поверхности должен быть больше радиуса инструмента');
+      else Re = Rt * p.Rs / (p.Rs - Rt);
+    }
+    var a, h;
+    if (p.given === 'a') { a = p.val; if (!(a > 0)) errs.push('Шаг должен быть больше 0'); if (a >= 2 * Re) errs.push('Шаг не может быть больше диаметра'); h = Re - Math.sqrt(Math.max(0, Re * Re - a * a / 4)); }
+    else { h = p.val; if (!(h > 0)) errs.push('Высота гребешка должна быть больше 0'); if (h >= Re) errs.push('Гребешок не может быть больше радиуса'); a = 2 * Math.sqrt(Math.max(0, h * (2 * Re - h))); }
+    if (errs.length) return { errors: errs };
+    var Rz = h, Ra = 0.0321 * a * a / Re;
+    return { errors: [], a: a, h: h, Rz: Rz, Ra: Ra, Re: Re, aPct: a / (2 * Rt) * 100 };
+  }
+
+  /* ---------- Macro B ---------- */
+  function macroBolt(p) {
+    var o = 'O' + (p.onum || 9101), k = p.xMode === 'radius' ? '0.5' : '1', L = [];
+    if (p.plane === 'xc') {
+      L.push(o + ' (БОЛТОВАЯ ОКРУЖНОСТЬ, ПОЗИЦИИ X-C)');
+      L.push('(A=ЧИСЛО ОТВЕРСТИЙ B=ДИАМЕТР ОКРУЖНОСТИ C=СТАРТОВЫЙ УГОЛ)');
+      L.push('#10=0');
+      L.push('WHILE[#10LT#1]DO1');
+      L.push('X[#2*' + k + '] C[#3+360*#10/#1]');
+      L.push('#10=#10+1');
+      L.push('END1');
+      L.push('M99');
+      L.push('(ВЫЗОВ: G65 P' + (p.onum || 9101) + ' A6. B40. C0.)');
+    } else {
+      L.push(o + ' (БОЛТОВАЯ ОКРУЖНОСТЬ, ПОЗИЦИИ X-Y)');
+      L.push('(A=ЧИСЛО ОТВЕРСТИЙ B=ДИАМЕТР ОКРУЖНОСТИ C=СТАРТОВЫЙ УГОЛ I=X ЦЕНТРА J=Y ЦЕНТРА)');
+      L.push('#10=0');
+      L.push('WHILE[#10LT#1]DO1');
+      L.push('#11=#3+360*#10/#1');
+      L.push('X[#4+#2*' + k + '*COS[#11]] Y[#5+#2/2*SIN[#11]]');
+      L.push('#10=#10+1');
+      L.push('END1');
+      L.push('M99');
+      L.push('(ВЫЗОВ: G65 P' + (p.onum || 9101) + ' A6. B40. C0. I0. J0.)');
+    }
+    return L.join('\n');
+  }
+  function macroPoly(p) {
+    var o = 'O' + (p.onum || 9102), fx = p.xMode === 'radius' ? '' : '2*', comp = p.comp === 'G41' ? 'G41' : 'G42';
+    var ccw = comp === 'G42', arc = ccw ? 'G03' : 'G02', rounded = p.rounded !== false;
+    var sg = ccw ? '+' : '-', ng = ccw ? '-' : '+';   // sg: знак шага по углу; ng: обратный знак
+    var L = [];
+    L.push(o + ' (МНОГОГРАННИК G12.1, КОНТУР, ' + comp + ')');
+    L.push('(A=N ГРАНЕЙ B=ПОД КЛЮЧ C=R УГЛА I=УГОЛ ГРАНИ 1 J=РАДИУС ПОДХОДА K=НОМЕР D)');
+    L.push('(J = РАДИУС ЗАГОТОВКИ + РАДИУС ФРЕЗЫ + ЗАЗОР)');
+    L.push('#10=#2/2');
+    L.push('#11=TAN[180/#1]');
+    L.push('#12=[#10-#3]*#11');
+    L.push('#13=360/#1');
+    L.push('G01 X[' + fx + '#5*COS[#4]] C[#5*SIN[#4]]');
+    L.push(comp + ' G01 X[' + fx + '#10*COS[#4]] C[#10*SIN[#4]] D#6');
+    L.push('#14=0');
+    L.push('WHILE[#14LT#1]DO1');
+    L.push('#15=#4' + sg + '#13*#14');
+    L.push('#20=#10*COS[#15]' + ng + '#12*SIN[#15]');
+    L.push('#21=#10*SIN[#15]' + sg + '#12*COS[#15]');
+    L.push('G01 X[' + fx + '#20] C[#21]');
+    if (rounded) {
+      L.push('#16=#4' + sg + '#13*[#14+1]');
+      L.push('#22=#10*COS[#16]' + sg + '#12*SIN[#16]');
+      L.push('#23=#10*SIN[#16]' + ng + '#12*COS[#16]');
+      L.push(arc + ' X[' + fx + '#22] C[#23] R#3');
+    }
+    L.push('#14=#14+1');
+    L.push('END1');
+    L.push('G01 X[' + fx + '#10*COS[#4]] C[#10*SIN[#4]]');
+    L.push('G40 G01 X[' + fx + '#5*COS[#4]] C[#5*SIN[#4]]');
+    L.push('M99');
+    L.push('(ВЫЗОВ: G65 P' + (p.onum || 9102) + ' A6. B24. C' + (rounded ? '2.' : '0.') + ' I0. J22. K1.)');
+    if (!rounded) L.push('(ШАБЛОН ДЛЯ ОСТРЫХ УГЛОВ: C = 0)');
+    return L.join('\n');
+  }
+
+  var api = { rrContour: rrContour, buildSlot: buildSlot, buildCyl: buildCyl, holes: holes, face: face, rot68: rot68, scallop: scallop, macroBolt: macroBolt, macroPoly: macroPoly, xOut: xOut, xIn: xIn };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Mill = api;
 })(typeof self !== 'undefined' ? self : this);
 </script>
 <script>
 (function(){
 'use strict';
-var KEY='polar-v4';
-var DEF={mode:'flat1',D:30,toolD:10,flatMode:'h',sizeMode:'flats',size:10,N:6,corner:0,phi:0,gap:2,comp:'',dOffset:1,dir:'CW'};
-var S=Object.assign({},DEF);
-try{var raw=localStorage.getItem(KEY); if(raw)S=Object.assign({},DEF,JSON.parse(raw));}catch(e){}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+var f=Polar.fmt, D2R=Math.PI/180;
+var KEY='mill-v1';
 var $=function(id){return document.getElementById(id);};
-var numIds=['D','toolD','size','N','corner','phi','gap','dOffset'];
-var strIds=['flatMode','sizeMode','comp','dir'];
-function num(v){return parseFloat(String(v).replace(',','.'));}
-function fill(){
-  numIds.forEach(function(i){$(i).value=S[i];});
-  strIds.forEach(function(i){$(i).value=S[i];});
-  setMode(S.mode,true);
+function num(v){var x=parseFloat(String(v).replace(',','.'));return isNaN(x)?0:x;}
+
+/* ---------- описание разделов ---------- */
+var COMPS=[['','нет (траектория центра)'],['G41','G41'],['G42','G42']];
+var DIRS=[['CCW','против часовой'],['CW','по часовой']];
+var compF=[
+  {id:'comp',l:'Коррекция на радиус',t:'s',def:'G42',opts:COMPS},
+  {id:'dOffset',l:'Номер D',t:'n',def:1,show:function(v){return !!v.comp;}},
+  {id:'dir',l:'Направление обхода',t:'s',def:'CCW',opts:DIRS,show:function(v){return !v.comp;}}
+];
+var MODS=[
+{id:'polar',title:'Полярка',note:'Контур в плоскости G12.1: подход, обход, отход. Инструмент осью вдоль Z.',fields:[
+  {id:'shape',l:'Что делаем',t:'s',def:'flat1',full:1,opts:[['flat1','Лыска с одной стороны'],['flat2','Лыски с двух сторон'],['poly','Многогранник']]},
+  {id:'D',l:'Диаметр заготовки, мм',t:'n',def:30},
+  {id:'toolD',l:'Диаметр фрезы, мм',t:'n',def:10},
+  {id:'flatMode',l:'Как задан размер',t:'s',def:'h',full:1,opts:[['h','Расстояние от оси до лыски'],['t','Глубина лыски от поверхности'],['T','Остаток от противоположной стороны']],show:function(v){return v.shape==='flat1';}},
+  {id:'sizeMode',l:'Как задан размер',t:'s',def:'flats',full:1,opts:[['flats','Под ключ (между гранями)'],['corners','По углам']],show:function(v){return v.shape==='poly';}},
+  {id:'size',l:function(v){return v.shape==='flat2'?'Размер под ключ между лысками, мм':v.shape==='poly'?(v.sizeMode==='corners'?'Размер по углам, мм':'Размер под ключ, мм'):({h:'Расстояние от оси до лыски, мм',t:'Глубина лыски, мм',T:'Размер от противоположной стороны, мм'})[v.flatMode];},t:'n',def:10},
+  {id:'N',l:'Число граней N',t:'n',def:6,show:function(v){return v.shape==='poly';}},
+  {id:'corner',l:function(v){return v.shape==='poly'?'Радиус скругления углов, мм (0 = острые)':'Скругление краёв лыски (переход в диаметр), мм (0 = нет)';},t:'n',def:0},
+  {id:'phi',l:'Ориентация нормали, град',t:'n',def:0},
+  {id:'gap',l:'Зазор фрезы до заготовки при подходе и отходе, мм',t:'n',def:2,full:1}
+ ].concat(compF)},
+{id:'slot',title:'Паз и карман',note:'Контур паза, прямоугольного кармана или круга. «Внутри» — карман, «снаружи» — бобышка. Для «внутри» подход и отход из центра: черновая выборка твоя.',fields:[
+  {id:'plane',l:'Плоскость',t:'s',def:'polar',opts:[['polar','X–C (полярка G12.1)'],['xy','X–Y (ось Y)']]},
+  {id:'mode',l:'Где фреза',t:'s',def:'in',opts:[['in','внутри (карман/паз)'],['out','снаружи (бобышка)']]},
+  {id:'shape',l:'Форма',t:'s',def:'slot',full:1,opts:[['slot','Паз (закруглённые концы)'],['rect','Прямоугольник'],['circle','Круг']]},
+  {id:'toolD',l:'Диаметр фрезы, мм',t:'n',def:8},
+  {id:'L',l:'Длина (вдоль оси фигуры), мм',t:'n',def:40,show:function(v){return v.shape!=='circle';}},
+  {id:'W',l:'Ширина, мм',t:'n',def:14,show:function(v){return v.shape!=='circle';}},
+  {id:'Dc',l:'Диаметр круга, мм',t:'n',def:20,show:function(v){return v.shape==='circle';}},
+  {id:'corner',l:'Радиус углов, мм (0 = острые)',t:'n',def:0,show:function(v){return v.shape==='rect';}},
+  {id:'cx',l:'X центра (как в программе)',t:'n',def:0},
+  {id:'cc',l:function(v){return v.plane==='xy'?'Y центра, мм':'C центра, мм';},t:'n',def:0},
+  {id:'psi',l:'Поворот фигуры, град',t:'n',def:0,show:function(v){return v.shape!=='circle';}},
+  {id:'gap',l:'Зазор при подходе снаружи, мм',t:'n',def:2,show:function(v){return v.mode==='out';}}
+ ].concat(compF)},
+{id:'cyl',title:'Цилиндр G07.1',note:'Развёртка цилиндра: плоскость Z–C, C в градусах, дуги через R в мм по развёртке. X (глубину) задаёшь сам. Перед контуром нужны G18 и G07.1 с радиусом цилиндра.',fields:[
+  {id:'Dcyl',l:'Диаметр цилиндра, мм',t:'n',def:50},
+  {id:'mode',l:'Где фреза',t:'s',def:'in',opts:[['in','внутри (паз/окно)'],['out','снаружи (бобышка)']]},
+  {id:'shape',l:'Форма',t:'s',def:'slot',full:1,opts:[['slot','Паз (закруглённые концы)'],['rect','Окно / прямоугольник'],['circle','Круг']]},
+  {id:'toolD',l:'Диаметр фрезы, мм',t:'n',def:6},
+  {id:'L',l:'Длина, мм',t:'n',def:30,show:function(v){return v.shape!=='circle';}},
+  {id:'W',l:'Ширина, мм',t:'n',def:10,show:function(v){return v.shape!=='circle';}},
+  {id:'Dc',l:'Диаметр круга, мм',t:'n',def:12,show:function(v){return v.shape==='circle';}},
+  {id:'corner',l:'Радиус углов окна, мм',t:'n',def:0,show:function(v){return v.shape==='rect';}},
+  {id:'Z0',l:'Z центра',t:'n',def:-20},
+  {id:'theta0',l:'Угол центра, град (C)',t:'n',def:0},
+  {id:'orient',l:'Направление',t:'s',def:'angle',opts:[['angle','задать углом'],['lead','винтовой: задать шагом']],show:function(v){return v.shape!=='circle';}},
+  {id:'psi',l:'Угол от оси Z к окружности, град (0 = вдоль Z, 90 = по кругу)',t:'n',def:0,show:function(v){return v.shape!=='circle'&&v.orient==='angle';}},
+  {id:'lead',l:'Шаг винта, мм на оборот (− = левый)',t:'n',def:100,show:function(v){return v.shape!=='circle'&&v.orient==='lead';}},
+  {id:'gap',l:'Зазор при подходе снаружи, мм',t:'n',def:2,show:function(v){return v.mode==='out';}}
+ ].concat(compF)},
+{id:'holes',title:'Отверстия',note:'Позиции групп отверстий. Строка цикла вставляется в первую позицию, в конце добавляется G80.',fields:[
+  {id:'plane',l:'Координаты',t:'s',def:'xy',opts:[['xy','X–Y (ось Y)'],['xc','X–C (поворот шпинделя)']]},
+  {id:'pattern',l:'Схема',t:'s',def:'circle',opts:[['circle','по окружности'],['arc','по дуге'],['line','в ряд'],['grid','сетка']]},
+  {id:'cx',l:'X центра (как в программе)',t:'n',def:0,show:function(v){return v.pattern==='circle'||v.pattern==='arc';}},
+  {id:'cy',l:'Y центра, мм',t:'n',def:0,show:function(v){return v.pattern==='circle'||v.pattern==='arc';}},
+  {id:'pcd',l:'Диаметр окружности центров, мм',t:'n',def:60,show:function(v){return v.pattern==='circle'||v.pattern==='arc';}},
+  {id:'n',l:function(v){return v.pattern==='grid'?'Отверстий в ряду':'Число отверстий';},t:'n',def:6},
+  {id:'a0',l:'Стартовый угол, град',t:'n',def:0,show:function(v){return v.pattern==='circle'||v.pattern==='arc';}},
+  {id:'sweep',l:'Угол дуги, град',t:'n',def:90,show:function(v){return v.pattern==='arc';}},
+  {id:'dir',l:'Направление',t:'s',def:'CCW',opts:DIRS,show:function(v){return v.pattern==='circle'||v.pattern==='arc';}},
+  {id:'x0',l:'X первого (как в программе)',t:'n',def:0,show:function(v){return v.pattern==='line'||v.pattern==='grid';}},
+  {id:'y0',l:'Y первого, мм',t:'n',def:0,show:function(v){return v.pattern==='line'||v.pattern==='grid';}},
+  {id:'pitch',l:'Шаг, мм',t:'n',def:10,show:function(v){return v.pattern==='line';}},
+  {id:'angle',l:'Угол ряда, град',t:'n',def:0,show:function(v){return v.pattern==='line';}},
+  {id:'px',l:'Шаг по X, мм',t:'n',def:10,show:function(v){return v.pattern==='grid';}},
+  {id:'py',l:'Шаг по Y, мм',t:'n',def:10,show:function(v){return v.pattern==='grid';}},
+  {id:'ny',l:'Число рядов',t:'n',def:2,show:function(v){return v.pattern==='grid';}},
+  {id:'cycle',l:'Цикл (G-код и слова, если нужно), например G83 Z-10. R2. Q3. F100',t:'t',def:'',full:1}
+ ]},
+{id:'face',title:'Торцевание',note:'Проходы торцевой фрезой по площадке или по диску. Подъём и опускание по Z делаешь сам.',fields:[
+  {id:'area',l:'Что фрезеруем',t:'s',def:'disk',opts:[['disk','диск (торец прутка)'],['rect','прямоугольник']]},
+  {id:'toolD',l:'Диаметр фрезы, мм',t:'n',def:50},
+  {id:'Dd',l:'Диаметр прутка, мм',t:'n',def:54,show:function(v){return v.area==='disk';}},
+  {id:'A',l:'Размер по X, мм',t:'n',def:80,show:function(v){return v.area==='rect';}},
+  {id:'B',l:'Размер по Y, мм',t:'n',def:60,show:function(v){return v.area==='rect';}},
+  {id:'cx',l:'X центра (как в программе)',t:'n',def:0},
+  {id:'cy',l:'Y центра, мм',t:'n',def:0},
+  {id:'pass',l:'Проходы вдоль',t:'s',def:'x',opts:[['x','оси X'],['y','оси Y']]},
+  {id:'mode',l:'Стратегия',t:'s',def:'zigzag',opts:[['zigzag','зигзаг'],['oneway','в одну сторону']]},
+  {id:'aePct',l:'Ширина прохода, % диаметра фрезы',t:'n',def:70},
+  {id:'first',l:'Начать с',t:'s',def:'-',opts:[['-','минуса'],['+','плюса']]},
+  {id:'over',l:'Выход оси фрезы за край материала, мм (≥ радиуса фрезы)',t:'n',def:30,full:1}
+ ]},
+{id:'g68',title:'Поворот G68',note:'Строка G68 и пересчёт точек. Точки: по строке «X Y», X как в программе. Проверь на станке, как G68 считает X на твоём токарном.',fields:[
+  {id:'cx',l:'X центра (как в программе)',t:'n',def:0},
+  {id:'cy',l:'Y центра, мм',t:'n',def:0},
+  {id:'angle',l:'Угол поворота, град (+ против часовой)',t:'n',def:30,full:1},
+  {id:'pts',l:'Точки для пересчёта (по строке «X Y»)',t:'t',def:'',full:1}
+ ]},
+{id:'scal',title:'Гребешок',note:'Высота гребешка и шероховатость при шаровой фрезе или токарной вставке с радиусом. Ra приближённая (≈0,0321·a²/R).',fields:[
+  {id:'Rt',l:'Радиус шара или при вершине, мм',t:'n',def:5},
+  {id:'surf',l:'Поверхность',t:'s',def:'flat',opts:[['flat','плоская'],['convex','выпуклая'],['concave','вогнутая']]},
+  {id:'Rs',l:'Радиус поверхности, мм',t:'n',def:30,show:function(v){return v.surf!=='flat';}},
+  {id:'given',l:'Дано',t:'s',def:'a',opts:[['a','шаг (строчка / подача на оборот)'],['h','высота гребешка']]},
+  {id:'val',l:function(v){return v.given==='a'?'Шаг, мм':'Высота гребешка Rz, мм';},t:'n',def:0.5}
+ ]},
+{id:'macro',title:'Макросы',note:'Шаблоны Macro B. Формулы проверены на интерпретаторе против расчёта приложения; на станке не запускались.',fields:[
+  {id:'type',l:'Шаблон',t:'s',def:'poly',full:1,opts:[['poly','Многогранник G12.1 (контур с коррекцией)'],['bolt','Болтовая окружность (позиции)']]},
+  {id:'onum',l:'Номер программы O',t:'n',def:9102},
+  {id:'plane',l:'Координаты',t:'s',def:'xy',opts:[['xy','X–Y'],['xc','X–C']],show:function(v){return v.type==='bolt';}},
+  {id:'comp',l:'Коррекция',t:'s',def:'G42',opts:[['G42','G42 (против часовой)'],['G41','G41 (по часовой)']],show:function(v){return v.type==='poly';}},
+  {id:'rounded',l:'Скругление углов',t:'s',def:'1',opts:[['1','есть (параметр C = R)'],['0','нет (острые)']],show:function(v){return v.type==='poly';}}
+ ]}
+];
+
+/* ---------- состояние ---------- */
+var S={x:'diameter',tab:'polar',v:{}};
+try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o)S=Object.assign(S,o);}}catch(e){}
+S.v=S.v||{};
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function mod(id){return MODS.filter(function(m){return m.id===id;})[0]||MODS[0];}
+function vals(m){
+  var v=S.v[m.id]=S.v[m.id]||{};
+  m.fields.forEach(function(fd){if(v[fd.id]===undefined)v[fd.id]=fd.def;});
+  return v;
 }
-function read(){
-  numIds.forEach(function(i){var v=num($(i).value); S[i]=isNaN(v)?0:v;});
-  strIds.forEach(function(i){S[i]=$(i).value;});
+
+/* ---------- форма ---------- */
+function renderTabs(){
+  $('tabs').innerHTML='';
+  MODS.forEach(function(m){var b=document.createElement('button');b.textContent=m.title;b.setAttribute('aria-pressed',m.id===S.tab?'true':'false');
+    b.onclick=function(){readForm();S.tab=m.id;save();renderAll();window.scrollTo(0,0);};$('tabs').appendChild(b);});
 }
-function setMode(m,noSave){
-  S.mode=m;
-  document.querySelectorAll('#mode button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.m===m?'true':'false');});
-  var poly=m==='poly';
-  $('flatModeWrap').classList.toggle('hide',poly||m==='flat2');
-  $('polySizeWrap').classList.toggle('hide',!poly);
-  $('NWrap').classList.toggle('hide',!poly);
-  $('shapeTitle').textContent=poly?'Многогранник':(m==='flat2'?'Лыски с двух сторон':'Лыска с одной стороны');
-  updSizeLabel();
-  if(!noSave)save();
+function renderForm(){
+  var m=mod(S.tab),v=vals(m),h='<div class="card"><div class="grid">';
+  m.fields.forEach(function(fd){
+    var id='f_'+fd.id,label=typeof fd.l==='function'?fd.l(v):fd.l,cls=fd.full?' full':'';
+    h+='<label class="fld'+cls+'" data-f="'+fd.id+'"><span class="lt">'+label+'</span>';
+    if(fd.t==='s'){h+='<select id="'+id+'">'+fd.opts.map(function(o){return '<option value="'+o[0]+'"'+(String(v[fd.id])===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';}
+    else if(fd.t==='t'){h+='<textarea id="'+id+'" spellcheck="false">'+String(v[fd.id]).replace(/</g,'&lt;')+'</textarea>';}
+    else h+='<input id="'+id+'" inputmode="decimal" value="'+v[fd.id]+'">';
+    h+='</label>';
+  });
+  h+='</div></div>';
+  $('form').innerHTML=h;
+  m.fields.forEach(function(fd){var el=$('f_'+fd.id);el.addEventListener('change',function(){readForm();refreshShow();});el.addEventListener('input',function(){if(fd.t==='s')return;});});
+  refreshShow();
+  $('modeNote').textContent=m.note;
 }
-function updSizeLabel(){
-  $('cornerLabel').textContent=S.mode==='poly'?'Радиус скругления углов, мм (0 = острые)':'Радиус скругления краёв лыски (переход в диаметр), мм (0 = без)';
-  var l='Размер, мм';
-  if(S.mode==='flat2')l='Размер под ключ между лысками, мм';
-  else if(S.mode==='flat1')l={h:'Расстояние от оси до лыски, мм',t:'Глубина лыски, мм',T:'Размер от противоположной стороны, мм'}[$('flatMode').value];
-  else l=$('sizeMode').value==='corners'?'Размер по углам, мм':'Размер под ключ, мм';
-  $('sizeLabel').textContent=l;
+function readForm(){
+  var m=mod(S.tab),v=vals(m);
+  m.fields.forEach(function(fd){var el=$('f_'+fd.id);if(!el)return;v[fd.id]=fd.t==='s'?el.value:fd.t==='t'?el.value:num(el.value);});
+  save();
 }
-function params(){
-  read();
-  var p={D:S.D,toolD:S.toolD,size:S.size,phi:S.phi,gap:S.gap,dir:S.dir,comp:S.comp||null,dOffset:S.dOffset};
-  p.corner=S.corner;
-  if(S.mode==='poly'){p.N=S.N;p.sizeMode=S.sizeMode;}
-  else if(S.mode==='flat2'){p.count=2;}
-  else {p.count=1;p.flatMode=S.flatMode;}
-  return p;
+function refreshShow(){
+  var m=mod(S.tab),v=vals(m);
+  m.fields.forEach(function(fd){
+    var lab=document.querySelector('label[data-f="'+fd.id+'"]');if(!lab)return;
+    lab.classList.toggle('hide',fd.show?!fd.show(v):false);
+    if(typeof fd.l==='function')lab.querySelector('.lt').textContent=fd.l(v);
+  });
 }
+function renderX(){document.querySelectorAll('#xsel button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.x===S.x?'true':'false');});}
+function renderAll(){renderX();renderTabs();renderForm();$('out').classList.add('hide');$('errs').textContent='';$('warn').classList.add('hide');}
+
+/* ---------- превью ---------- */
+function pt(q){return {x:q.x,y:q.c!==undefined?q.c:q.y};}
+function drawView(view){
+  var items=view.items,minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+  function ext(x,y,r){minx=Math.min(minx,x-r);maxx=Math.max(maxx,x+r);miny=Math.min(miny,y-r);maxy=Math.max(maxy,y+r);}
+  items.forEach(function(it){
+    if(it.t==='c')ext(it.cx,it.cy,it.r);
+    else if(it.t==='p'&&it.fit!==false)it.pts.forEach(function(q){var a=pt(q);ext(a.x,a.y,0);});
+    else if(it.t==='d')ext(it.x,it.y,it.r||0);
+  });
+  var w=maxx-minx,hh=maxy-miny,m=Math.max(w,hh,1)*0.08;
+  var vx=minx-m,vy=-(maxy+m),vw=w+2*m,vh=hh+2*m,sw=Math.max(vw,vh)/170;
+  var s='';
+  items.forEach(function(it){
+    var st=({stock:'stroke="var(--stock)" stroke-width="'+(sw*2)+'" stroke-dasharray="'+(sw*8)+' '+(sw*5)+'" fill="none"',
+      part:'stroke="var(--ink)" stroke-width="'+(sw*2.6)+'" fill="'+(it.fill?'var(--acc2)':'none')+'" fill-opacity=".6" stroke-linejoin="round"',
+      centre:'stroke="var(--fin)" stroke-width="'+(sw*1.5)+'" fill="none" stroke-linejoin="round"',
+      move:'stroke="var(--rough)" stroke-width="'+(sw*1.5)+'" stroke-dasharray="'+(sw*3)+' '+(sw*2)+'" fill="none"',
+      tool:'stroke="var(--fin)" stroke-width="'+sw+'" stroke-dasharray="'+(sw*3)+' '+(sw*3)+'" fill="none"',
+      axis:'stroke="var(--line)" stroke-width="'+sw+'" fill="none"',
+      dot:'fill="var(--acc)" stroke="none"'})[it.s];
+    if(it.t==='c')s+='<circle cx="'+it.cx.toFixed(3)+'" cy="'+(-it.cy).toFixed(3)+'" r="'+it.r.toFixed(3)+'" '+st+'/>';
+    else if(it.t==='p')s+='<polyline points="'+it.pts.map(function(q){var a=pt(q);return a.x.toFixed(3)+','+(-a.y).toFixed(3);}).join(' ')+'" '+st+'/>';
+    else if(it.t==='d'){s+='<circle cx="'+it.x.toFixed(3)+'" cy="'+(-it.y).toFixed(3)+'" r="'+(it.r||sw*3).toFixed(3)+'" '+st+'/>';
+      if(it.txt)s+='<text x="'+(it.x+(it.r||sw*3)*1.4).toFixed(3)+'" y="'+(-it.y-(it.r||sw*3)*1.4).toFixed(3)+'" font-size="'+(sw*8).toFixed(3)+'" fill="var(--mut)">'+it.txt+'</text>';}
+  });
+  var svg=$('svg');svg.setAttribute('viewBox',vx.toFixed(3)+' '+vy.toFixed(3)+' '+vw.toFixed(3)+' '+vh.toFixed(3));svg.innerHTML=s;
+  $('viewTitle').textContent=view.title||'Схема';
+  $('legend').innerHTML=(view.legend||[]).map(function(l){return '<span><i style="background:'+l[0]+'"></i>'+l[1]+'</span>';}).join('');
+}
+var LEG={part:['var(--ink)','деталь'],centre:['var(--fin)','центр фрезы'],move:['var(--rough)','подход / отход'],stock:['var(--stock)','заготовка']};
+function axes(R){return [{t:'p',s:'axis',pts:[{x:-R,y:0},{x:R,y:0}],fit:false},{t:'p',s:'axis',pts:[{x:0,y:-R},{x:0,y:R}],fit:false}];}
+
+/* ---------- расчёт по разделам ---------- */
+var RUN={
+polar:function(v,X){
+  var p={D:v.D,toolD:v.toolD,size:v.size,phi:v.phi,gap:v.gap,dir:v.dir,comp:v.comp||null,dOffset:v.dOffset,corner:v.corner,xMode:X};
+  if(v.shape==='poly'){p.N=v.N;p.sizeMode=v.sizeMode;}else if(v.shape==='flat2'){p.count=2;}else{p.count=1;p.flatMode=v.flatMode;}
+  var build=function(q){return v.shape==='poly'?Polar.buildPolygon(q):Polar.buildFlats(q);};
+  var m=build(p);if(m.errors.length)return {errors:m.errors};
+  var np=build(Object.assign({},p,{comp:'G42'}));
+  var items=[{t:'c',cx:0,cy:0,r:m.R,s:'stock'}];
+  items=items.concat(axes(m.R*1.5));
+  np.contours.forEach(function(c){items.push({t:'p',s:'part',pts:c.line,fill:v.shape==='poly'});});
+  m.contours.forEach(function(c){
+    items.push({t:'p',s:'centre',pts:c.centre});
+    items.push({t:'p',s:'move',pts:[c.pre,c.centre[0]]});items.push({t:'p',s:'move',pts:[c.centre[c.centre.length-1],c.post]});
+  });
+  items.push({t:'c',cx:m.contours[0].centre[0].x,cy:m.contours[0].centre[0].c,r:m.r,s:'tool'});
+  var sum,xf=function(x){return f(X==='radius'?x:2*x);};
+  if(m.kind==='flats'){sum='Расстояние от оси до лыски: <b>'+f(m.aT)+'</b> мм · хорда: <b>'+f(m.chord)+'</b> мм<br>X лыски в программе: <b>'+xf(m.aT)+'</b>';if(m.rc>0)sum+='<br>Скругление краёв: <b>R'+f(m.rc)+'</b> (максимум: '+f(m.rfMax)+' мм)';}
+  else{sum='Размер под ключ: <b>'+f(2*m.aT)+'</b> · по углам (острые): <b>'+f(m.across_corners)+'</b> мм';if(m.rc>0)sum+='<br>Скругление углов: <b>R'+f(m.rc)+'</b>';if(m.across_corners>p.D)sum+='<br>Углы выходят за заготовку: на углах останутся цилиндрические участки';}
+  var t='<table style="margin-top:8px"><tr><th>Точка контура</th><th>X</th><th>C</th><th>R</th><th>Угол°</th></tr>';
+  m.contours.forEach(function(c,ci){var tag=m.kind==='flats'?'л'+(ci+1)+' ':'';var all=[['начало',c.start]].concat(c.segs.map(function(sg,i){return [(sg.arc?'дуга ':'т.')+(i+1),sg.pt];}));
+    all.forEach(function(a){var q=a[1],rp=Polar.realPolar(q);t+='<tr><td>'+tag+a[0]+'</td><td>'+xf(q.x)+'</td><td>'+f(q.c)+'</td><td>'+f(rp.r)+'</td><td>'+f(rp.th)+'</td></tr>';});});
+  sum+='<details><summary>Проверка: X, C и реальные R, угол точек</summary>'+t+'</table></details>';
+  return {code:Polar.gcode(m,p),sum:sum,view:{title:'Траектория (плоскость X–C)',items:items,legend:[LEG.stock,LEG.part,LEG.centre,LEG.move]}};
+},
+slot:function(v,X){
+  var p=Object.assign({},v,{xMode:X,comp:v.comp||null});
+  var m=Mill.buildSlot(p);if(m.errors.length)return {errors:m.errors};
+  p.map=m.map;var c=m.contours[0];
+  var items=axes(Math.max(m.hx,m.hy)*1.3+Math.abs(v.cc)+10);
+  items.push({t:'p',s:'part',pts:c.progLine,fill:true});items.push({t:'p',s:'centre',pts:c.centre});
+  items.push({t:'p',s:'move',pts:[c.pre,c.centre[0]]});items.push({t:'c',cx:c.centre[0].x,cy:c.centre[0].c,r:m.r,s:'tool'});
+  var xf=function(x){return f(X==='radius'?x:2*x);};
+  var sum='Фигура '+f(2*m.hx)+' × '+f(2*m.hy)+(m.rr>0?', углы R'+f(m.rr):'')+' · центр X'+xf(Mill.xIn(v.cx,{xMode:X}))+' '+m.axis+f(v.cc)+(v.shape!=='circle'?' · поворот '+f(v.psi)+'°':'');
+  return {code:Polar.gcode(m,p),sum:sum,warnings:m.warnings,view:{title:'Схема (вид в плоскости '+(v.plane==='xy'?'X–Y':'X–C')+')',items:items,legend:[LEG.part,LEG.centre,LEG.move]}};
+},
+cyl:function(v,X){
+  var p=Object.assign({},v,{comp:v.comp||null});
+  var m=Mill.buildCyl(p);if(m.errors.length)return {errors:m.errors};
+  p.map=m.map;var c=m.contours[0],rc=m.rc;
+  var items=axes(Math.max(m.hx,m.hy)*1.3+10);
+  items.push({t:'p',s:'part',pts:c.progLine,fill:true});items.push({t:'p',s:'centre',pts:c.centre});
+  items.push({t:'p',s:'move',pts:[c.pre,c.centre[0]]});items.push({t:'c',cx:c.centre[0].x,cy:c.centre[0].c,r:m.r,s:'tool'});
+  var sum='Развёртка: по горизонтали Z, по вертикали длина дуги; 1° = '+f(rc*D2R)+' мм. Фигура '+f(2*m.hx)+' × '+f(2*m.hy)+(m.rr>0?', углы R'+f(m.rr):'')+(v.shape!=='circle'?' · угол к оси Z: <b>'+f(m.psi)+'°</b>':'');
+  var code='(G18 · G07.1 C'+f(rc)+' — ВКЛЮЧИТЬ, РАДИУС ЦИЛИНДРА)\n'+Polar.gcode(m,p)+'\n(G07.1 C0 — ОТМЕНА)';
+  return {code:code,sum:sum,warnings:m.warnings,view:{title:'Развёртка цилиндра (Z, длина дуги)',items:items,legend:[LEG.part,LEG.centre,LEG.move]}};
+},
+holes:function(v,X){
+  var p=Object.assign({},v,{xMode:X});var r=Mill.holes(p);if(r.errors.length)return {errors:r.errors};
+  var maxr=0;r.pts.forEach(function(q){maxr=Math.max(maxr,Math.hypot(q.x,q.y));});
+  var items=axes(maxr*1.3+5);
+  if(v.pattern==='circle'||v.pattern==='arc')items.push({t:'c',cx:Mill.xIn(v.cx,{xMode:X}),cy:v.cy,r:v.pcd/2,s:'stock'});
+  var rd=Math.max(maxr,10)/45;
+  r.pts.forEach(function(q,i){items.push({t:'d',x:q.x,y:q.y,r:rd,s:'dot',txt:String(i+1)});});
+  return {code:r.text,sum:'Отверстий: <b>'+r.pts.length+'</b>',view:{title:'Позиции (вид в плоскости X–Y, X в мм от оси)',items:items,legend:[]}};
+},
+face:function(v,X){
+  var p=Object.assign({},v,{xMode:X});var m=Mill.face(p);if(m.errors.length)return {errors:m.errors};
+  var items=[];var R=Math.max(m.halfAlong,m.halfAcross);items=items.concat(axes(R*1.6));
+  var hx=m.alongX?m.halfAlong:m.halfAcross,hy=m.alongX?m.halfAcross:m.halfAlong;
+  if(v.area==='disk')items.push({t:'c',cx:m.cx,cy:m.cy,r:v.Dd/2,s:'part'});
+  else items.push({t:'p',s:'part',pts:[{x:m.cx-hx,y:m.cy-hy},{x:m.cx+hx,y:m.cy-hy},{x:m.cx+hx,y:m.cy+hy},{x:m.cx-hx,y:m.cy+hy},{x:m.cx-hx,y:m.cy-hy}]});
+  m.passes.forEach(function(ps,i){items.push({t:'p',s:'centre',pts:ps});if(i>0)items.push({t:'p',s:'move',pts:[m.passes[i-1][1],ps[0]]});});
+  items.push({t:'c',cx:m.passes[0][0].x,cy:m.passes[0][0].y,r:m.r,s:'tool'});
+  var sum='Проходов: <b>'+m.n+'</b> · шаг: <b>'+f(m.step)+'</b> мм · перекрытие проходов: <b>'+f(m.overlap)+'</b> %';
+  return {code:m.text,sum:sum,warnings:m.warnings,view:{title:'Проходы (вид в плоскости X–Y)',items:items,legend:[LEG.part,LEG.centre,LEG.move]}};
+},
+g68:function(v,X){
+  var p=Object.assign({},v,{xMode:X});var r=Mill.rot68(p);if(r.errors.length)return {errors:r.errors};
+  return {code:r.text,sum:'Положительный угол — против часовой стрелки в плоскости X–Y. Центр и точки — в тех же единицах X, что в программе.'};
+},
+scal:function(v,X){
+  var r=Mill.scallop(v);if(r.errors.length)return {errors:r.errors};
+  var s='Шаг: <b>'+f(r.a)+'</b> мм (<b>'+f(r.aPct)+'</b> % диаметра инструмента)<br>Высота гребешка Rz: <b>'+r.h.toFixed(4)+'</b> мм = <b>'+(r.h*1000).toFixed(1)+'</b> мкм<br>Ra ≈ <b>'+(r.Ra*1000).toFixed(2)+'</b> мкм';
+  if(v.surf!=='flat')s+='<br>Эффективный радиус с учётом кривизны поверхности: <b>'+f(r.Re)+'</b> мм';
+  return {sum:s};
+},
+macro:function(v,X){
+  var p=Object.assign({},v,{xMode:X,rounded:v.rounded==='1'});
+  if(v.type==='bolt')return {code:Mill.macroBolt(p),sum:'Вызов: G65 P'+v.onum+' A… B… C… '+(v.plane==='xy'?'I… J…':'')+'. Аргументы: A — число, B — диаметр окружности, C — стартовый угол'+(v.plane==='xy'?', I — X центра (как в программе), J — Y центра':'')+'.'};
+  return {code:Mill.macroPoly(p),sum:'Вызов: G65 P'+v.onum+' A… B… C… I… J… K…: A — число граней, B — размер под ключ, C — радиус угла, I — угол грани 1, J — радиус подхода от оси до оси фрезы (R заготовки + R фрезы + зазор), K — номер D. Перед вызовом включи G12.1.'};
+}
+};
+
 var lastCode='';
 function calc(){
-  var p=params(); save();
-  var m=S.mode==='poly'?Polar.buildPolygon(p):Polar.buildFlats(p);
-  if(m.errors.length){$('errs').textContent=m.errors.join('. ');$('out').classList.add('hide');return;}
+  readForm();
+  var m=mod(S.tab),v=vals(m),res;
+  try{res=RUN[m.id](v,S.x);}catch(e){res={errors:['Ошибка расчёта: '+e.message]};}
+  $('warn').classList.add('hide');
+  if(res.errors&&res.errors.length){$('errs').textContent=res.errors.join('. ');$('out').classList.add('hide');return;}
   $('errs').textContent='';
-  lastCode=Polar.gcode(m,p);
-  $('code').textContent=lastCode;
+  if(res.warnings&&res.warnings.length){$('warn').textContent=res.warnings.join('. ');$('warn').classList.remove('hide');}
   $('out').classList.remove('hide');
-  draw(m,p); summary(m,p); realTable(m);
+  $('sum').innerHTML=res.sum||'';
+  lastCode=res.code||'';
+  $('codeCard').classList.toggle('hide',!lastCode);
+  $('code').textContent=lastCode;
+  $('viewCard').classList.toggle('hide',!res.view);
+  if(res.view)drawView(res.view);
   $('out').scrollIntoView({behavior:'smooth',block:'start'});
 }
-function summary(m,p){
-  var f=Polar.fmt, h='';
-  if(m.kind==='flats'){
-    h+='Расстояние от оси до лыски: <b>'+f(m.aT)+'</b> мм · хорда: <b>'+f(m.chord)+'</b> мм<br>';
-    h+='X лыски в программе: <b>'+f(2*m.aT)+'</b>';
-    if(m.rc>0)h+='<br>Скругление краёв: <b>R'+f(m.rc)+'</b> (максимум для этого размера: '+f(m.rfMax)+' мм)';
-  }else{
-    h+='Размер под ключ: <b>'+f(2*m.aT)+'</b> · по углам (острые): <b>'+f(m.across_corners)+'</b> мм';
-    if(m.rc>0)h+='<br>Скругление углов: <b>R'+f(m.rc)+'</b>';
-    if(m.across_corners>p.D)h+='<br>Углы выходят за заготовку: на углах останутся цилиндрические участки';
-  }
-  $('sum').innerHTML=h;
-}
-function realTable(m){
-  var pts=[];
-  m.contours.forEach(function(c,ci){
-    var tag=m.kind==='flats'?('лыска '+(ci+1)+' '):'';
-    pts.push([tag+'начало контура',c.start]);
-    c.segs.forEach(function(sg,i){pts.push([tag+(sg.arc?'конец дуги ':'точка ')+(i+1),sg.pt]);});
-  });
-  var t='<tr><th>Точка</th><th>X пл.</th><th>C пл.</th><th>R</th><th>Угол°</th></tr>';
-  pts.forEach(function(a){var q=a[1],rp=Polar.realPolar(q);t+='<tr><td>'+a[0]+'</td><td>'+Polar.fmt(2*q.x)+'</td><td>'+Polar.fmt(q.c)+'</td><td>'+Polar.fmt(rp.r)+'</td><td>'+Polar.fmt(rp.th)+'</td></tr>';});
-  $('real').innerHTML=t+'<tr><td colspan="5" style="text-align:left;color:var(--mut)">X пл. — как в программе (диаметр). R и угол — реальный радиус и угол точки.</td></tr>';
-}
-function draw(m,p){
-  var R=m.R, ext=R+m.r*2+p.gap+4;
-  var svg=$('svg'); svg.setAttribute('viewBox',(-ext)+' '+(-ext)+' '+(2*ext)+' '+(2*ext));
-  var sw=ext/120;
-  function Pt(q){return q.x.toFixed(3)+','+(-q.c).toFixed(3);}
-  var h='';
-  h+='<line x1="'+(-ext)+'" y1="0" x2="'+ext+'" y2="0" stroke="var(--line)" stroke-width="'+sw+'"/>';
-  h+='<line x1="0" y1="'+(-ext)+'" x2="0" y2="'+ext+'" stroke="var(--line)" stroke-width="'+sw+'"/>';
-  h+='<circle cx="0" cy="0" r="'+R+'" fill="none" stroke="var(--stock)" stroke-width="'+(sw*2)+'" stroke-dasharray="'+(sw*8)+' '+(sw*5)+'"/>';
-  if(m.kind==='polygon'){
-    var c0=m.contours[0]; var comp=!!c0.comp;
-    // деталь: запрограммированный контур при коррекции, иначе строим по тем же формулам без смещения
-    var np=Polar.buildPolygon(Object.assign({},p,{comp:'G42'}));
-    h+='<polyline points="'+np.contours[0].line.map(Pt).join(' ')+'" fill="var(--acc2)" fill-opacity=".6" stroke="var(--ink)" stroke-width="'+(sw*2.4)+'" stroke-linejoin="round"/>';
-  }else{
-    h+='<circle cx="0" cy="0" r="'+R+'" fill="var(--acc2)" fill-opacity=".5" stroke="var(--ink)" stroke-width="'+(sw*1.2)+'"/>';
-    var nf=Polar.buildFlats(Object.assign({},p,{comp:'G42'}));
-    nf.contours.forEach(function(c){
-      h+='<polyline points="'+c.line.map(Pt).join(' ')+'" fill="none" stroke="var(--ink)" stroke-width="'+(sw*3)+'" stroke-linejoin="round"/>';
-    });
-  }
-  m.contours.forEach(function(c){
-    h+='<polyline points="'+c.centre.map(Pt).join(' ')+'" fill="none" stroke="var(--fin)" stroke-width="'+(sw*1.4)+'" stroke-linejoin="round"/>';
-    h+='<polyline points="'+[c.pre,c.centre[0]].map(Pt).join(' ')+'" fill="none" stroke="var(--rough)" stroke-width="'+(sw*1.4)+'" stroke-dasharray="'+(sw*3)+' '+(sw*2)+'"/>';
-    h+='<polyline points="'+[c.centre[c.centre.length-1],c.post].map(Pt).join(' ')+'" fill="none" stroke="var(--rough)" stroke-width="'+(sw*1.4)+'" stroke-dasharray="'+(sw*3)+' '+(sw*2)+'"/>';
-  });
-  var fp=m.contours[0].centre[0];
-  h+='<circle cx="'+fp.x.toFixed(3)+'" cy="'+(-fp.c).toFixed(3)+'" r="'+m.r+'" fill="none" stroke="var(--fin)" stroke-width="'+sw+'" stroke-dasharray="'+(sw*3)+' '+(sw*3)+'"/>';
-  svg.innerHTML=h;
-}
-// события
-document.querySelectorAll('#mode button').forEach(function(b){b.addEventListener('click',function(){read();setMode(b.dataset.m);});});
-['flatMode','sizeMode'].forEach(function(i){$(i).addEventListener('change',function(){updSizeLabel();});});
-function compUi(){var c=!!$('comp').value;$('dirWrap').classList.toggle('hide',c);$('dWrap').classList.toggle('hide',!c);}
-$('comp').addEventListener('change',compUi);
+
+/* ---------- события ---------- */
+document.querySelectorAll('#xsel button').forEach(function(b){b.addEventListener('click',function(){S.x=b.dataset.x;save();renderX();$('out').classList.add('hide');});});
 $('calc').addEventListener('click',calc);
-$('reset').addEventListener('click',function(){S=Object.assign({},DEF);save();fill();$('out').classList.add('hide');$('errs').textContent='';compUi();});
+$('reset').addEventListener('click',function(){var m=mod(S.tab);delete S.v[m.id];save();renderForm();$('out').classList.add('hide');$('errs').textContent='';$('warn').classList.add('hide');});
 $('copy').addEventListener('click',function(){
   function done(){$('copy').textContent='Скопировано';setTimeout(function(){$('copy').textContent='Копировать';},1500);}
-  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(lastCode).then(done,function(){fallback();});}else fallback();
   function fallback(){var ta=document.createElement('textarea');ta.value=lastCode;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch(e){}document.body.removeChild(ta);}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(lastCode).then(done,fallback);}else fallback();
 });
-$('share').addEventListener('click',function(){
-  if(navigator.share){navigator.share({title:'Полярка G12.1',text:lastCode}).catch(function(){});}
-  else{$('copy').click();}
-});
-fill(); compUi();
+$('share').addEventListener('click',function(){if(navigator.share){navigator.share({title:'G-код',text:lastCode}).catch(function(){});}else $('copy').click();});
+renderAll();
 if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
 })();
 </script>
