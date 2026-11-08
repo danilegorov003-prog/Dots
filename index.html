@@ -245,7 +245,7 @@ details summary{cursor:pointer;font-weight:600;padding:4px 0}
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Polar = api;
 })(typeof self !== 'undefined' ? self : this);
 </script>
-<script>/* Фрезерные разделы: паз/карман/окружность, цилиндр G07.1, отверстия, торцевание, G68, гребешок, макросы. */
+<script>/* Фрезерные разделы: паз/карман/окружность, отверстия, торцевание. */
 (function (root) {
   'use strict';
   var Polar = (typeof require !== 'undefined') ? require('./core.js') : root.Polar;
@@ -325,30 +325,6 @@ details summary{cursor:pointer;font-weight:600;padding:4px 0}
     return m;
   }
 
-  // цилиндр G07.1: плоскость (Z, s) с s = r·θ; в программе C в градусах
-  function buildCyl(p) {
-    var rc = p.Dcyl / 2, errs = [];
-    if (!(rc > 0)) errs.push('Диаметр цилиндра должен быть больше 0');
-    var d = shapeDims(p);
-    if (p.shape === 'slot' && p.L < p.W) errs.push('Длина паза не может быть меньше ширины');
-    var psi = p.psi;
-    if (p.orient === 'lead') {
-      if (!p.lead) errs.push('Шаг винта не может быть 0');
-      else psi = Math.atan2(2 * Math.PI * rc, p.lead) / D2R;
-    }
-    if (errs.length) return { errors: errs, warnings: [] };
-    var s0 = rc * p.theta0 * D2R;
-    var m = rrContour({ hx: d.hx, hy: d.hy, rr: d.rr, psi: psi, cx: p.Z0, cc: s0, mode: p.mode, comp: p.comp, dir: p.dir,
-      toolD: p.toolD, gap: p.gap, label: d.name + (p.mode === 'in' ? ' (ВНУТРИ)' : ' (СНАРУЖИ)') + ' НА ЦИЛИНДРЕ D' + fmt(p.Dcyl) });
-    if (m.errors.length) return m;
-    m.kind = 'cyl'; m.rc = rc; m.psi = psi;
-    m.map = function (pt) { return ' Z' + fmt(pt.x) + ' C' + fmt(pt.c / rc / D2R); };
-    // предупреждение: контур выходит за один оборот
-    var span = 0; m.contours[0].line.forEach(function (q) { span = Math.max(span, Math.abs(q.c)); });
-    if (span > Math.PI * rc + 1e-6) m.warnings.push('Контур занимает больше пол-оборота от нуля: проверь переход через 180°');
-    return m;
-  }
-
   /* ---------- отверстия ---------- */
   function holes(p) {
     var pts = [], k, errs = [];
@@ -420,108 +396,7 @@ details summary{cursor:pointer;font-weight:600;padding:4px 0}
       n: ys.length, step: step, overlap: step ? (1 - step / (2 * r)) * 100 : 100, r: r, area: p.area, halfAlong: halfAlong, halfAcross: halfAcross, alongX: alongX, cx: cx, cy: cy };
   }
 
-  /* ---------- поворот G68 ---------- */
-  function rot68(p) {
-    var errs = [];
-    if (isNaN(p.angle)) errs.push('Укажи угол');
-    var cx = xIn(p.cx, p), cy = p.cy, ca = Math.cos(p.angle * D2R), sa = Math.sin(p.angle * D2R);
-    var nums = [];
-    (p.pts || '').split('\n').forEach(function (ln) {
-      var m = ln.replace(/,/g, '.').match(/-?\d+(?:\.\d+)?|-?\.\d+/g);
-      if (m && m.length >= 2) nums.push({ X: parseFloat(m[0]), y: parseFloat(m[1]) });
-    });
-    if (errs.length) return { errors: errs };
-    var out = ['G68 X' + fmt(p.cx) + ' Y' + fmt(cy) + ' R' + fmt(p.angle), '(КООРДИНАТЫ В ПОВЁРНУТОЙ СИСТЕМЕ — КАК ДО ПОВОРОТА)', 'G69'];
-    var rotated = nums.map(function (q) {
-      var x = xIn(q.X, p), dx = x - cx, dy = q.y - cy;
-      return { x: cx + dx * ca - dy * sa, y: cy + dx * sa + dy * ca };
-    });
-    var lines = rotated.map(function (q, i) { return 'T' + (i + 1) + ' X' + fmt(xOut(q.x, p)) + ' Y' + fmt(q.y); });
-    return { errors: [], g68: out.slice(0, 1).concat(['...', 'G69']).join('\n'), rotated: rotated, lines: lines, text: out.slice(0, 1).concat(['...', 'G69']).join('\n') + (lines.length ? '\n\n(ТОЧКИ ПОСЛЕ ПОВОРОТА, БЕЗ G68)\n' + lines.join('\n') : '') };
-  }
-
-  /* ---------- гребешок и шероховатость ---------- */
-  function scallop(p) {
-    var errs = [], Rt = p.Rt, Re = Rt;
-    if (!(Rt > 0)) errs.push('Радиус инструмента должен быть больше 0');
-    if (p.surf !== 'flat') {
-      if (!(p.Rs > 0)) errs.push('Радиус поверхности должен быть больше 0');
-      else if (p.surf === 'convex') Re = Rt * p.Rs / (Rt + p.Rs);
-      else if (p.Rs <= Rt) errs.push('Радиус вогнутой поверхности должен быть больше радиуса инструмента');
-      else Re = Rt * p.Rs / (p.Rs - Rt);
-    }
-    var a, h;
-    if (p.given === 'a') { a = p.val; if (!(a > 0)) errs.push('Шаг должен быть больше 0'); if (a >= 2 * Re) errs.push('Шаг не может быть больше диаметра'); h = Re - Math.sqrt(Math.max(0, Re * Re - a * a / 4)); }
-    else { h = p.val; if (!(h > 0)) errs.push('Высота гребешка должна быть больше 0'); if (h >= Re) errs.push('Гребешок не может быть больше радиуса'); a = 2 * Math.sqrt(Math.max(0, h * (2 * Re - h))); }
-    if (errs.length) return { errors: errs };
-    var Rz = h, Ra = 0.0321 * a * a / Re;
-    return { errors: [], a: a, h: h, Rz: Rz, Ra: Ra, Re: Re, aPct: a / (2 * Rt) * 100 };
-  }
-
-  /* ---------- Macro B ---------- */
-  function macroBolt(p) {
-    var o = 'O' + (p.onum || 9101), k = p.xMode === 'radius' ? '0.5' : '1', L = [];
-    if (p.plane === 'xc') {
-      L.push(o + ' (БОЛТОВАЯ ОКРУЖНОСТЬ, ПОЗИЦИИ X-C)');
-      L.push('(A=ЧИСЛО ОТВЕРСТИЙ B=ДИАМЕТР ОКРУЖНОСТИ C=СТАРТОВЫЙ УГОЛ)');
-      L.push('#10=0');
-      L.push('WHILE[#10LT#1]DO1');
-      L.push('X[#2*' + k + '] C[#3+360*#10/#1]');
-      L.push('#10=#10+1');
-      L.push('END1');
-      L.push('M99');
-      L.push('(ВЫЗОВ: G65 P' + (p.onum || 9101) + ' A6. B40. C0.)');
-    } else {
-      L.push(o + ' (БОЛТОВАЯ ОКРУЖНОСТЬ, ПОЗИЦИИ X-Y)');
-      L.push('(A=ЧИСЛО ОТВЕРСТИЙ B=ДИАМЕТР ОКРУЖНОСТИ C=СТАРТОВЫЙ УГОЛ I=X ЦЕНТРА J=Y ЦЕНТРА)');
-      L.push('#10=0');
-      L.push('WHILE[#10LT#1]DO1');
-      L.push('#11=#3+360*#10/#1');
-      L.push('X[#4+#2*' + k + '*COS[#11]] Y[#5+#2/2*SIN[#11]]');
-      L.push('#10=#10+1');
-      L.push('END1');
-      L.push('M99');
-      L.push('(ВЫЗОВ: G65 P' + (p.onum || 9101) + ' A6. B40. C0. I0. J0.)');
-    }
-    return L.join('\n');
-  }
-  function macroPoly(p) {
-    var o = 'O' + (p.onum || 9102), fx = p.xMode === 'radius' ? '' : '2*', comp = p.comp === 'G41' ? 'G41' : 'G42';
-    var ccw = comp === 'G42', arc = ccw ? 'G03' : 'G02', rounded = p.rounded !== false;
-    var sg = ccw ? '+' : '-', ng = ccw ? '-' : '+';   // sg: знак шага по углу; ng: обратный знак
-    var L = [];
-    L.push(o + ' (МНОГОГРАННИК G12.1, КОНТУР, ' + comp + ')');
-    L.push('(A=N ГРАНЕЙ B=ПОД КЛЮЧ C=R УГЛА I=УГОЛ ГРАНИ 1 J=РАДИУС ПОДХОДА K=НОМЕР D)');
-    L.push('(J = РАДИУС ЗАГОТОВКИ + РАДИУС ФРЕЗЫ + ЗАЗОР)');
-    L.push('#10=#2/2');
-    L.push('#11=TAN[180/#1]');
-    L.push('#12=[#10-#3]*#11');
-    L.push('#13=360/#1');
-    L.push('G01 X[' + fx + '#5*COS[#4]] C[#5*SIN[#4]]');
-    L.push(comp + ' G01 X[' + fx + '#10*COS[#4]] C[#10*SIN[#4]] D#6');
-    L.push('#14=0');
-    L.push('WHILE[#14LT#1]DO1');
-    L.push('#15=#4' + sg + '#13*#14');
-    L.push('#20=#10*COS[#15]' + ng + '#12*SIN[#15]');
-    L.push('#21=#10*SIN[#15]' + sg + '#12*COS[#15]');
-    L.push('G01 X[' + fx + '#20] C[#21]');
-    if (rounded) {
-      L.push('#16=#4' + sg + '#13*[#14+1]');
-      L.push('#22=#10*COS[#16]' + sg + '#12*SIN[#16]');
-      L.push('#23=#10*SIN[#16]' + ng + '#12*COS[#16]');
-      L.push(arc + ' X[' + fx + '#22] C[#23] R#3');
-    }
-    L.push('#14=#14+1');
-    L.push('END1');
-    L.push('G01 X[' + fx + '#10*COS[#4]] C[#10*SIN[#4]]');
-    L.push('G40 G01 X[' + fx + '#5*COS[#4]] C[#5*SIN[#4]]');
-    L.push('M99');
-    L.push('(ВЫЗОВ: G65 P' + (p.onum || 9102) + ' A6. B24. C' + (rounded ? '2.' : '0.') + ' I0. J22. K1.)');
-    if (!rounded) L.push('(ШАБЛОН ДЛЯ ОСТРЫХ УГЛОВ: C = 0)');
-    return L.join('\n');
-  }
-
-  var api = { rrContour: rrContour, buildSlot: buildSlot, buildCyl: buildCyl, holes: holes, face: face, rot68: rot68, scallop: scallop, macroBolt: macroBolt, macroPoly: macroPoly, xOut: xOut, xIn: xIn };
+  var api = { rrContour: rrContour, buildSlot: buildSlot, holes: holes, face: face, xOut: xOut, xIn: xIn };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Mill = api;
 })(typeof self !== 'undefined' ? self : this);
 </script>
@@ -568,22 +443,6 @@ var MODS=[
   {id:'psi',l:'Поворот фигуры, град',t:'n',def:0,show:function(v){return v.shape!=='circle';}},
   {id:'gap',l:'Зазор при подходе снаружи, мм',t:'n',def:2,show:function(v){return v.mode==='out';}}
  ].concat(compF)},
-{id:'cyl',title:'Цилиндр G07.1',note:'Развёртка цилиндра: плоскость Z–C, C в градусах, дуги через R в мм по развёртке. X (глубину) задаёшь сам. Перед контуром нужны G18 и G07.1 с радиусом цилиндра.',fields:[
-  {id:'Dcyl',l:'Диаметр цилиндра, мм',t:'n',def:50},
-  {id:'mode',l:'Где фреза',t:'s',def:'in',opts:[['in','внутри (паз/окно)'],['out','снаружи (бобышка)']]},
-  {id:'shape',l:'Форма',t:'s',def:'slot',full:1,opts:[['slot','Паз (закруглённые концы)'],['rect','Окно / прямоугольник'],['circle','Круг']]},
-  {id:'toolD',l:'Диаметр фрезы, мм',t:'n',def:6},
-  {id:'L',l:'Длина, мм',t:'n',def:30,show:function(v){return v.shape!=='circle';}},
-  {id:'W',l:'Ширина, мм',t:'n',def:10,show:function(v){return v.shape!=='circle';}},
-  {id:'Dc',l:'Диаметр круга, мм',t:'n',def:12,show:function(v){return v.shape==='circle';}},
-  {id:'corner',l:'Радиус углов окна, мм',t:'n',def:0,show:function(v){return v.shape==='rect';}},
-  {id:'Z0',l:'Z центра',t:'n',def:-20},
-  {id:'theta0',l:'Угол центра, град (C)',t:'n',def:0},
-  {id:'orient',l:'Направление',t:'s',def:'angle',opts:[['angle','задать углом'],['lead','винтовой: задать шагом']],show:function(v){return v.shape!=='circle';}},
-  {id:'psi',l:'Угол от оси Z к окружности, град (0 = вдоль Z, 90 = по кругу)',t:'n',def:0,show:function(v){return v.shape!=='circle'&&v.orient==='angle';}},
-  {id:'lead',l:'Шаг винта, мм на оборот (− = левый)',t:'n',def:100,show:function(v){return v.shape!=='circle'&&v.orient==='lead';}},
-  {id:'gap',l:'Зазор при подходе снаружи, мм',t:'n',def:2,show:function(v){return v.mode==='out';}}
- ].concat(compF)},
 {id:'holes',title:'Отверстия',note:'Позиции групп отверстий. Строка цикла вставляется в первую позицию, в конце добавляется G80.',fields:[
   {id:'plane',l:'Координаты',t:'s',def:'xy',opts:[['xy','X–Y (ось Y)'],['xc','X–C (поворот шпинделя)']]},
   {id:'pattern',l:'Схема',t:'s',def:'circle',opts:[['circle','по окружности'],['arc','по дуге'],['line','в ряд'],['grid','сетка']]},
@@ -616,26 +475,6 @@ var MODS=[
   {id:'aePct',l:'Ширина прохода, % диаметра фрезы',t:'n',def:70},
   {id:'first',l:'Начать с',t:'s',def:'-',opts:[['-','минуса'],['+','плюса']]},
   {id:'over',l:'Выход оси фрезы за край материала, мм (≥ радиуса фрезы)',t:'n',def:30,full:1}
- ]},
-{id:'g68',title:'Поворот G68',note:'Строка G68 и пересчёт точек. Точки: по строке «X Y», X как в программе. Проверь на станке, как G68 считает X на твоём токарном.',fields:[
-  {id:'cx',l:'X центра (как в программе)',t:'n',def:0},
-  {id:'cy',l:'Y центра, мм',t:'n',def:0},
-  {id:'angle',l:'Угол поворота, град (+ против часовой)',t:'n',def:30,full:1},
-  {id:'pts',l:'Точки для пересчёта (по строке «X Y»)',t:'t',def:'',full:1}
- ]},
-{id:'scal',title:'Гребешок',note:'Высота гребешка и шероховатость при шаровой фрезе или токарной вставке с радиусом. Ra приближённая (≈0,0321·a²/R).',fields:[
-  {id:'Rt',l:'Радиус шара или при вершине, мм',t:'n',def:5},
-  {id:'surf',l:'Поверхность',t:'s',def:'flat',opts:[['flat','плоская'],['convex','выпуклая'],['concave','вогнутая']]},
-  {id:'Rs',l:'Радиус поверхности, мм',t:'n',def:30,show:function(v){return v.surf!=='flat';}},
-  {id:'given',l:'Дано',t:'s',def:'a',opts:[['a','шаг (строчка / подача на оборот)'],['h','высота гребешка']]},
-  {id:'val',l:function(v){return v.given==='a'?'Шаг, мм':'Высота гребешка Rz, мм';},t:'n',def:0.5}
- ]},
-{id:'macro',title:'Макросы',note:'Шаблоны Macro B. Формулы проверены на интерпретаторе против расчёта приложения; на станке не запускались.',fields:[
-  {id:'type',l:'Шаблон',t:'s',def:'poly',full:1,opts:[['poly','Многогранник G12.1 (контур с коррекцией)'],['bolt','Болтовая окружность (позиции)']]},
-  {id:'onum',l:'Номер программы O',t:'n',def:9102},
-  {id:'plane',l:'Координаты',t:'s',def:'xy',opts:[['xy','X–Y'],['xc','X–C']],show:function(v){return v.type==='bolt';}},
-  {id:'comp',l:'Коррекция',t:'s',def:'G42',opts:[['G42','G42 (против часовой)'],['G41','G41 (по часовой)']],show:function(v){return v.type==='poly';}},
-  {id:'rounded',l:'Скругление углов',t:'s',def:'1',opts:[['1','есть (параметр C = R)'],['0','нет (острые)']],show:function(v){return v.type==='poly';}}
  ]}
 ];
 
@@ -758,17 +597,6 @@ slot:function(v,X){
   var sum='Фигура '+f(2*m.hx)+' × '+f(2*m.hy)+(m.rr>0?', углы R'+f(m.rr):'')+' · центр X'+xf(Mill.xIn(v.cx,{xMode:X}))+' '+m.axis+f(v.cc)+(v.shape!=='circle'?' · поворот '+f(v.psi)+'°':'');
   return {code:Polar.gcode(m,p),sum:sum,warnings:m.warnings,view:{title:'Схема (вид в плоскости '+(v.plane==='xy'?'X–Y':'X–C')+')',items:items,legend:[LEG.part,LEG.centre,LEG.move]}};
 },
-cyl:function(v,X){
-  var p=Object.assign({},v,{comp:v.comp||null});
-  var m=Mill.buildCyl(p);if(m.errors.length)return {errors:m.errors};
-  p.map=m.map;var c=m.contours[0],rc=m.rc;
-  var items=axes(Math.max(m.hx,m.hy)*1.3+10);
-  items.push({t:'p',s:'part',pts:c.progLine,fill:true});items.push({t:'p',s:'centre',pts:c.centre});
-  items.push({t:'p',s:'move',pts:[c.pre,c.centre[0]]});items.push({t:'c',cx:c.centre[0].x,cy:c.centre[0].c,r:m.r,s:'tool'});
-  var sum='Развёртка: по горизонтали Z, по вертикали длина дуги; 1° = '+f(rc*D2R)+' мм. Фигура '+f(2*m.hx)+' × '+f(2*m.hy)+(m.rr>0?', углы R'+f(m.rr):'')+(v.shape!=='circle'?' · угол к оси Z: <b>'+f(m.psi)+'°</b>':'');
-  var code='(G18 · G07.1 C'+f(rc)+' — ВКЛЮЧИТЬ, РАДИУС ЦИЛИНДРА)\n'+Polar.gcode(m,p)+'\n(G07.1 C0 — ОТМЕНА)';
-  return {code:code,sum:sum,warnings:m.warnings,view:{title:'Развёртка цилиндра (Z, длина дуги)',items:items,legend:[LEG.part,LEG.centre,LEG.move]}};
-},
 holes:function(v,X){
   var p=Object.assign({},v,{xMode:X});var r=Mill.holes(p);if(r.errors.length)return {errors:r.errors};
   var maxr=0;r.pts.forEach(function(q){maxr=Math.max(maxr,Math.hypot(q.x,q.y));});
@@ -788,21 +616,6 @@ face:function(v,X){
   items.push({t:'c',cx:m.passes[0][0].x,cy:m.passes[0][0].y,r:m.r,s:'tool'});
   var sum='Проходов: <b>'+m.n+'</b> · шаг: <b>'+f(m.step)+'</b> мм · перекрытие проходов: <b>'+f(m.overlap)+'</b> %';
   return {code:m.text,sum:sum,warnings:m.warnings,view:{title:'Проходы (вид в плоскости X–Y)',items:items,legend:[LEG.part,LEG.centre,LEG.move]}};
-},
-g68:function(v,X){
-  var p=Object.assign({},v,{xMode:X});var r=Mill.rot68(p);if(r.errors.length)return {errors:r.errors};
-  return {code:r.text,sum:'Положительный угол — против часовой стрелки в плоскости X–Y. Центр и точки — в тех же единицах X, что в программе.'};
-},
-scal:function(v,X){
-  var r=Mill.scallop(v);if(r.errors.length)return {errors:r.errors};
-  var s='Шаг: <b>'+f(r.a)+'</b> мм (<b>'+f(r.aPct)+'</b> % диаметра инструмента)<br>Высота гребешка Rz: <b>'+r.h.toFixed(4)+'</b> мм = <b>'+(r.h*1000).toFixed(1)+'</b> мкм<br>Ra ≈ <b>'+(r.Ra*1000).toFixed(2)+'</b> мкм';
-  if(v.surf!=='flat')s+='<br>Эффективный радиус с учётом кривизны поверхности: <b>'+f(r.Re)+'</b> мм';
-  return {sum:s};
-},
-macro:function(v,X){
-  var p=Object.assign({},v,{xMode:X,rounded:v.rounded==='1'});
-  if(v.type==='bolt')return {code:Mill.macroBolt(p),sum:'Вызов: G65 P'+v.onum+' A… B… C… '+(v.plane==='xy'?'I… J…':'')+'. Аргументы: A — число, B — диаметр окружности, C — стартовый угол'+(v.plane==='xy'?', I — X центра (как в программе), J — Y центра':'')+'.'};
-  return {code:Mill.macroPoly(p),sum:'Вызов: G65 P'+v.onum+' A… B… C… I… J… K…: A — число граней, B — размер под ключ, C — радиус угла, I — угол грани 1, J — радиус подхода от оси до оси фрезы (R заготовки + R фрезы + зазор), K — номер D. Перед вызовом включи G12.1.'};
 }
 };
 
