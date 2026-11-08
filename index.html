@@ -74,13 +74,13 @@ details summary{cursor:pointer;font-weight:600;padding:4px 0}
     <select id="sizeMode"><option value="flats">Под ключ (между гранями)</option><option value="corners">По углам</option></select></label>
   <label><span id="sizeLabel">Размер, мм</span><input id="size" inputmode="decimal"></label>
   <label id="NWrap" class="hide">Число граней N<input id="N" inputmode="numeric"></label>
-  <label id="cornerWrap" class="hide">Радиус скругления углов, мм (0 = острые)<input id="corner" inputmode="decimal"></label>
+  <label id="cornerWrap"><span id="cornerLabel">Радиус скругления, мм (0 = без скругления)</span><input id="corner" inputmode="decimal"></label>
   <label>Ориентация нормали, град (в плоскости C)<input id="phi" inputmode="decimal"></label>
 </div></div>
 
 <div class="card"><h2>Подход и коррекция</h2>
 <div class="grid">
-  <label>Длина подхода и отхода, мм<input id="lead" inputmode="decimal"></label>
+  <label>Зазор фрезы до заготовки в точках подхода и отхода, мм<input id="gap" inputmode="decimal"></label>
   <label>Коррекция на радиус<select id="comp"><option value="">нет (траектория центра)</option><option value="G41">G41</option><option value="G42">G42</option></select></label>
   <label id="dWrap">Номер D (коррекция)<input id="dOffset" inputmode="numeric"></label>
   <label id="dirWrap">Направление обхода<select id="dir"><option value="CW">по часовой в плоскости X–C</option><option value="CCW">против часовой</option></select></label>
@@ -142,8 +142,7 @@ details summary{cursor:pointer;font-weight:600;padding:4px 0}
     var e = [];
     if (!(p.D > 0)) e.push('Диаметр заготовки должен быть больше 0');
     if (!(p.toolD > 0)) e.push('Диаметр фрезы должен быть больше 0');
-    if (!(p.lead > 0)) e.push('Длина подхода должна быть больше 0');
-    if (p.comp && p.toolD > 0 && p.lead < p.toolD / 2) e.push('При коррекции подход должен быть не меньше радиуса фрезы (' + fmt(p.toolD / 2) + ' мм)');
+    if (!(p.gap > 0)) e.push('Зазор до заготовки должен быть больше 0');
     return e;
   }
 
@@ -168,26 +167,38 @@ details summary{cursor:pointer;font-weight:600;padding:4px 0}
     if (!(aT >= 0)) err.push('Размер лыски даёт расстояние от оси < 0');
     if (aT >= R) err.push('Лыска не снимает материал (расстояние от оси ≥ радиуса заготовки)');
     if (err.length) return { errors: err };
-    var comp = p.comp || null;
-    var tc = Math.sqrt((R + r) * (R + r) - (aT + r) * (aT + r)) + 1.0;
+    var comp = p.comp || null, rf = p.corner > 0 ? p.corner : 0;
+    var rfMax = (R + aT) / 2;
+    if (rf > rfMax + 1e-9) return { errors: ['Радиус скругления краёв лыски не может быть больше ' + fmt(rfMax) + ' мм (для этого диаметра и размера)'] };
+    var tc = Math.sqrt((R + r + p.gap) * (R + r + p.gap) - (aT + r) * (aT + r));
     var sign = comp === 'G41' ? -1 : comp === 'G42' ? 1 : (p.dir === 'CW' ? -1 : 1);
     var b0 = -sign * tc, b1 = sign * tc;
     var phis = p.count === 2 ? [p.phi, p.phi + 180] : [p.phi];
-    var contours = phis.map(function (phi, i) {
-      var fr = frame(phi), c;
-      if (comp) {
-        c = { pre: fr.at(aT + p.lead, b0), start: fr.at(aT, b0), segs: [{ pt: fr.at(aT, b1) }], post: fr.at(aT + p.lead, b1) };
-        c.centre = [fr.at(aT + r, b0), fr.at(aT + r, b1)];
-      } else {
-        var s0 = fr.at(aT + r, b0), s1 = fr.at(aT + r, b1);
-        c = { pre: fr.at(aT + r + p.lead, b0), start: s0, segs: [{ pt: s1 }], post: fr.at(aT + r + p.lead, b1) };
-        c.centre = [s0, s1];
+    var Rpre = R + r + p.gap;
+    // offs = 0 — контур детали (для коррекции), offs = r — траектория центра фрезы
+    function flatGen(fr, offs) {
+      if (rf <= 0) {
+        var s0 = fr.at(aT + offs, b0), s1 = fr.at(aT + offs, b1);
+        return { pre: fr.at(aT + r + p.gap, b0), start: s0, segs: [{ pt: s1 }], post: fr.at(aT + r + p.gap, b1) };
       }
-      c.label = 'ЛЫСКА ' + (i + 1) + ' (нормаль ' + fmt(phi) + '°)';
+      var w = Math.sqrt((R - aT) * (R + aT - 2 * rf)), ccw = sign === 1;
+      var c1 = fr.at(aT - rf, -sign * w), c2 = fr.at(aT - rf, sign * w);
+      var l1 = Math.hypot(c1.x, c1.c), u1 = P(c1.x / l1, c1.c / l1), u2 = P(c2.x / l1, c2.c / l1);
+      var ro = rf + offs;
+      var start = P(c1.x + ro * u1.x, c1.c + ro * u1.c), e1 = fr.at(aT + offs, -sign * w);
+      var e2 = fr.at(aT + offs, sign * w), end = P(c2.x + ro * u2.x, c2.c + ro * u2.c);
+      return { pre: P(u1.x * Rpre, u1.c * Rpre), start: start,
+        segs: [{ pt: e1, arc: { R: ro, ccw: ccw } }, { pt: e2 }, { pt: end, arc: { R: ro, ccw: ccw } }],
+        post: P(u2.x * Rpre, u2.c * Rpre) };
+    }
+    var contours = phis.map(function (phi, i) {
+      var fr = frame(phi), c = flatGen(fr, comp ? 0 : r);
+      c.centre = finish(flatGen(fr, r)).line;
+      c.label = 'ЛЫСКА ' + (i + 1) + ' (нормаль ' + fmt(phi) + '°)' + (rf > 0 ? ', R' + fmt(rf) : '');
       c.comp = comp;
       return finish(c);
     });
-    return { errors: [], kind: 'flats', contours: contours, aT: aT, R: R, r: r, chord: 2 * Math.sqrt(R * R - aT * aT) };
+    return { errors: [], kind: 'flats', contours: contours, aT: aT, R: R, r: r, rc: rf, rfMax: rfMax, chord: 2 * Math.sqrt(R * R - aT * aT) };
   }
 
   /* ---------- МНОГОГРАННИК ---------- */
@@ -227,8 +238,7 @@ details summary{cursor:pointer;font-weight:600;padding:4px 0}
     var prog = comp ? build(aT, rc) : build(aT + r, rc > 0 ? rc + r : 0);
     var n0 = frame(p.phi);
     var c = { start: prog.start, segs: prog.segs, comp: comp, label: 'МНОГОГРАННИК N=' + N + ', ПОД КЛЮЧ ' + fmt(2 * aT) + (rc > 0 ? ', R' + fmt(rc) : '') };
-    var offs = comp ? p.lead : r + p.lead;
-    c.pre = n0.at((comp ? aT : aT + r) + p.lead, 0);
+    c.pre = n0.at(R + r + p.gap, 0);
     c.post = c.pre;
     finish(c);
     // для превью: центр фрезы
@@ -265,13 +275,13 @@ details summary{cursor:pointer;font-weight:600;padding:4px 0}
 <script>
 (function(){
 'use strict';
-var KEY='polar-v2';
-var DEF={mode:'flat1',D:30,toolD:10,flatMode:'h',sizeMode:'flats',size:10,N:6,corner:0,phi:0,lead:5,comp:'',dOffset:1,dir:'CW'};
+var KEY='polar-v4';
+var DEF={mode:'flat1',D:30,toolD:10,flatMode:'h',sizeMode:'flats',size:10,N:6,corner:0,phi:0,gap:2,comp:'',dOffset:1,dir:'CW'};
 var S=Object.assign({},DEF);
 try{var raw=localStorage.getItem(KEY); if(raw)S=Object.assign({},DEF,JSON.parse(raw));}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 var $=function(id){return document.getElementById(id);};
-var numIds=['D','toolD','size','N','corner','phi','lead','dOffset'];
+var numIds=['D','toolD','size','N','corner','phi','gap','dOffset'];
 var strIds=['flatMode','sizeMode','comp','dir'];
 function num(v){return parseFloat(String(v).replace(',','.'));}
 function fill(){
@@ -290,12 +300,12 @@ function setMode(m,noSave){
   $('flatModeWrap').classList.toggle('hide',poly||m==='flat2');
   $('polySizeWrap').classList.toggle('hide',!poly);
   $('NWrap').classList.toggle('hide',!poly);
-  $('cornerWrap').classList.toggle('hide',!poly);
   $('shapeTitle').textContent=poly?'Многогранник':(m==='flat2'?'Лыски с двух сторон':'Лыска с одной стороны');
   updSizeLabel();
   if(!noSave)save();
 }
 function updSizeLabel(){
+  $('cornerLabel').textContent=S.mode==='poly'?'Радиус скругления углов, мм (0 = острые)':'Радиус скругления краёв лыски (переход в диаметр), мм (0 = без)';
   var l='Размер, мм';
   if(S.mode==='flat2')l='Размер под ключ между лысками, мм';
   else if(S.mode==='flat1')l={h:'Расстояние от оси до лыски, мм',t:'Глубина лыски, мм',T:'Размер от противоположной стороны, мм'}[$('flatMode').value];
@@ -304,8 +314,9 @@ function updSizeLabel(){
 }
 function params(){
   read();
-  var p={D:S.D,toolD:S.toolD,size:S.size,phi:S.phi,lead:S.lead,dir:S.dir,comp:S.comp||null,dOffset:S.dOffset};
-  if(S.mode==='poly'){p.N=S.N;p.sizeMode=S.sizeMode;p.corner=S.corner;}
+  var p={D:S.D,toolD:S.toolD,size:S.size,phi:S.phi,gap:S.gap,dir:S.dir,comp:S.comp||null,dOffset:S.dOffset};
+  p.corner=S.corner;
+  if(S.mode==='poly'){p.N=S.N;p.sizeMode=S.sizeMode;}
   else if(S.mode==='flat2'){p.count=2;}
   else {p.count=1;p.flatMode=S.flatMode;}
   return p;
@@ -327,6 +338,7 @@ function summary(m,p){
   if(m.kind==='flats'){
     h+='Расстояние от оси до лыски: <b>'+f(m.aT)+'</b> мм · хорда: <b>'+f(m.chord)+'</b> мм<br>';
     h+='X лыски в программе: <b>'+f(2*m.aT)+'</b>';
+    if(m.rc>0)h+='<br>Скругление краёв: <b>R'+f(m.rc)+'</b> (максимум для этого размера: '+f(m.rfMax)+' мм)';
   }else{
     h+='Размер под ключ: <b>'+f(2*m.aT)+'</b> · по углам (острые): <b>'+f(m.across_corners)+'</b> мм';
     if(m.rc>0)h+='<br>Скругление углов: <b>R'+f(m.rc)+'</b>';
@@ -346,7 +358,7 @@ function realTable(m){
   $('real').innerHTML=t+'<tr><td colspan="5" style="text-align:left;color:var(--mut)">X пл. — как в программе (диаметр). R и угол — реальный радиус и угол точки.</td></tr>';
 }
 function draw(m,p){
-  var R=m.R, ext=R+m.r*2+p.lead+4;
+  var R=m.R, ext=R+m.r*2+p.gap+4;
   var svg=$('svg'); svg.setAttribute('viewBox',(-ext)+' '+(-ext)+' '+(2*ext)+' '+(2*ext));
   var sw=ext/120;
   function Pt(q){return q.x.toFixed(3)+','+(-q.c).toFixed(3);}
@@ -357,12 +369,13 @@ function draw(m,p){
   if(m.kind==='polygon'){
     var c0=m.contours[0]; var comp=!!c0.comp;
     // деталь: запрограммированный контур при коррекции, иначе строим по тем же формулам без смещения
-    var np=Polar.buildPolygon(Object.assign({},p,{comp:'G42',lead:Math.max(p.lead,p.toolD)}));
+    var np=Polar.buildPolygon(Object.assign({},p,{comp:'G42'}));
     h+='<polyline points="'+np.contours[0].line.map(Pt).join(' ')+'" fill="var(--acc2)" fill-opacity=".6" stroke="var(--ink)" stroke-width="'+(sw*2.4)+'" stroke-linejoin="round"/>';
   }else{
     h+='<circle cx="0" cy="0" r="'+R+'" fill="var(--acc2)" fill-opacity=".5" stroke="var(--ink)" stroke-width="'+(sw*1.2)+'"/>';
-    m.contours.forEach(function(c){
-      h+='<polyline points="'+c.line.map(Pt).join(' ')+'" fill="none" stroke="var(--ink)" stroke-width="'+(sw*3)+'"/>';
+    var nf=Polar.buildFlats(Object.assign({},p,{comp:'G42'}));
+    nf.contours.forEach(function(c){
+      h+='<polyline points="'+c.line.map(Pt).join(' ')+'" fill="none" stroke="var(--ink)" stroke-width="'+(sw*3)+'" stroke-linejoin="round"/>';
     });
   }
   m.contours.forEach(function(c){
